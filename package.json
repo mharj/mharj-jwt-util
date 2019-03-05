@@ -1,0 +1,64 @@
+{
+  "name": "mharj-jwt-util",
+  "version": "0.0.1",
+  "description": "JWT util",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "mocha": "mocha",
+    "prepublishOnly": "npm run build",
+    "test": "nyc mocha test/*.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mharj/mharj-jwt-util.git"
+  },
+  "keywords": [
+    "jwt",
+    "jsonwebtoken",
+    "openid",
+    "util"
+  ],
+  "author": "mharj",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mharj/mharj-jwt-util/issues"
+  },
+  "homepage": "https://github.com/mharj/mharj-jwt-util#readme",
+  "nyc": {
+    "extension": [
+      ".ts"
+    ],
+    "include": [
+      "src"
+    ],
+    "reporter": [
+      "text",
+      "html"
+    ],
+    "all": true
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/chai-as-promised": "^7.1.0",
+    "@types/jsonwebtoken": "^8.3.0",
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^11.10.4",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^6.0.2",
+    "nyc": "^13.3.0",
+    "source-map-support": "^0.5.10",
+    "ts-node": "^8.0.2",
+    "tslint": "^5.13.1",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.3.3333"
+  },
+  "dependencies": {
+    "cross-fetch": "^3.0.1",
+    "jsonwebtoken": "^8.5.0"
+  }
+}
