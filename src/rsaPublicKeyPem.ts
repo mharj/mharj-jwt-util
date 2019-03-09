@@ -37,7 +37,7 @@ export const buildCertFrame = (der: string | Buffer): Buffer | string => {
 	if (!match) {
 		throw new Error('Cert data error');
 	}
-	return Buffer.from('-----BEGIN RSA PUBLIC KEY-----\n' + match.join('\n') + '\n-----END RSA PUBLIC KEY-----\n');
+	return Buffer.from('-----BEGIN RSA PUBLIC KEY-----\r\n' + match.join('\r\n') + '\r\n-----END RSA PUBLIC KEY-----\r\n');
 };
 
 function prepadSigned(hexStr: string) {
