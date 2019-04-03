@@ -59,3 +59,7 @@ export const jwtBearerVerify = <T extends object>(authHeader: string, allowedIss
 	}
 	return jwtVerify(match[1], allowedIssuers);
 };
+
+export const jwtDeleteKid = (issuer: string, kid: string) => {
+	icl.deleteKid(issuer, kid);
+}

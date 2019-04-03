@@ -34,7 +34,11 @@ export class IssuerCertLoader {
 		// if we don't have issuer yet loaded, or kid can't be found from list .. load cert list for issuer
 		if (!issuer || !issuer.certs.find((c) => c.kid === kid)) {
 			const certList = await this.getCertList(issuerUrl);
-			this.certs.push({url: issuerUrl, certs: certList.keys});
+			if ( issuer ) { // we just update keys
+				issuer.certs = certList.keys;
+			} else {
+				this.certs.push({url: issuerUrl, certs: certList.keys});
+			}
 		}
 		issuer = this.certs.find((i) => i.url === issuerUrl);
 		if (!issuer) {
@@ -52,6 +56,17 @@ export class IssuerCertLoader {
 		} else {
 			throw new Error('no cert found');
 		}
+	}
+	public deleteKid(issuerUrl: string, kid: string): boolean {
+		const issuer = this.certs.find((i) => i.url === issuerUrl);
+		if (issuer) {
+			const certIndex = issuer.certs.findIndex((c) => c.kid === kid);
+			if ( certIndex !== -1  ) {
+				issuer.certs.splice(certIndex, 1);
+				return true;
+			}
+		}
+		return false;
 	}
 	private async getCertList(issuerUrl: string): Promise<ICertList> {
 		const config = await this.getConfiguration(issuerUrl);
