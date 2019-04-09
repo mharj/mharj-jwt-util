@@ -3,8 +3,13 @@ import {IssuerCertLoader} from './issuerCertLoader';
 import {buildCertFrame} from './rsaPublicKeyPem';
 const icl = new IssuerCertLoader();
 
-interface ITokenPayload {
+export interface ITokenPayload {
+	aud?: string;
+	exp?: number;
+	iat?: number;
 	iss?: string;
+	sub?: string;
+	nonce?: string;
 }
 
 interface ITokenHeader {
