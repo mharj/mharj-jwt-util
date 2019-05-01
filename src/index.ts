@@ -29,6 +29,9 @@ interface ITokenStructure {
  */
 export const jwtVerify = async <T extends object>(token: string, allowedIssuers?: string[] | undefined): Promise<T & ITokenPayload> => {
 	const decoded = jwt.decode(token, {complete: true}) as ITokenStructure;
+	if ( ! decoded ) {
+		throw new Error('Can\'t decode token');
+	}
 	const {kid, alg, typ} = decoded.header;
 	if (!kid || typ !== 'JWT' || !decoded.payload.iss) {
 		throw new Error('token missing required parameters');

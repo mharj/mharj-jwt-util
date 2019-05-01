@@ -55,4 +55,8 @@ describe('jwtUtil', () => {
 		const decode = await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, ['https://accounts.google.com']);
 		expect(decode).not.to.be.null;
 	});
+	it('test Azure ID Token ', async () => {
+		const decode = await jwtVerify(process.env.AZURE_ID_TOKEN as string);
+		expect(decode).not.to.be.null;
+	});
 });
