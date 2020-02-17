@@ -1,7 +1,10 @@
 import * as jwt from 'jsonwebtoken';
+import {ExpireCache} from './ExpireCache';
 import {IssuerCertLoader} from './issuerCertLoader';
 import {buildCertFrame} from './rsaPublicKeyPem';
 const icl = new IssuerCertLoader();
+
+const cache = new ExpireCache<any>();
 
 export interface ITokenPayload {
 	aud?: string;
@@ -14,7 +17,7 @@ export interface ITokenPayload {
 
 interface ITokenHeader {
 	kid?: string;
-	alg: string | undefined;
+	alg: jwt.Algorithm | undefined;
 	typ: string | undefined;
 }
 
@@ -22,33 +25,54 @@ interface ITokenStructure {
 	header: ITokenHeader;
 	payload: ITokenPayload;
 }
+let isCached: boolean | undefined;
+export const wasItCached = () => {
+	return isCached;
+};
+
+export const testGetCache = () => {
+	if (process.env.NODE_ENV === 'testing') {
+		return cache;
+	} else {
+		throw new Error('only for testing');
+	}
+};
+
 /**
  * Verify JWT token against issuer public certs
  * @param token jwt token
  * @param allowedIssuers optional issuer validation
  */
-export const jwtVerify = async <T extends object>(token: string, allowedIssuers?: string[] | undefined): Promise<T & ITokenPayload> => {
+export const jwtVerify = async <T extends object>(token: string, options?: jwt.VerifyOptions | undefined): Promise<T & ITokenPayload> => {
+	const cached = cache.get(token);
+	if (cached) {
+		isCached = true;
+		return cached;
+	}
+	isCached = false;
 	const decoded = jwt.decode(token, {complete: true}) as ITokenStructure;
-	if ( ! decoded ) {
-		throw new Error('Can\'t decode token');
+	if (!decoded) {
+		throw new Error("Can't decode token");
 	}
 	const {kid, alg, typ} = decoded.header;
 	if (!kid || typ !== 'JWT' || !decoded.payload.iss) {
 		throw new Error('token missing required parameters');
 	}
-	const verifyOptions: jwt.VerifyOptions = {};
-	if (allowedIssuers) {
-		verifyOptions.issuer = allowedIssuers;
+	if (!options) {
+		options = {};
 	}
 	if (alg) {
-		verifyOptions.algorithms = [alg];
+		options.algorithms = [alg];
 	}
 	const certString = await icl.getCert(decoded.payload.iss, kid);
 	return new Promise((resolve, reject) => {
-		jwt.verify(token, buildCertFrame(certString), verifyOptions, (err: Error, verifiedDecode: T & ITokenPayload) => {
+		jwt.verify(token, buildCertFrame(certString), options, (err: Error, verifiedDecode: T & ITokenPayload) => {
 			if (err) {
 				reject(err);
 			} else {
+				if (verifiedDecode.exp) {
+					cache.put(token, verifiedDecode, verifiedDecode.exp * 1000);
+				}
 				resolve(verifiedDecode);
 			}
 		});
@@ -60,14 +84,14 @@ export const jwtVerify = async <T extends object>(token: string, allowedIssuers?
  * @param authHeader raw authentication header with ^Bearer prefix
  * @param allowedIssuers optional issuer validation
  */
-export const jwtBearerVerify = <T extends object>(authHeader: string, allowedIssuers?: string[]): Promise<ITokenPayload & T> => {
+export const jwtBearerVerify = <T extends object>(authHeader: string, options?: jwt.VerifyOptions | undefined): Promise<ITokenPayload & T> => {
 	const match = authHeader.match(/^Bearer (.*?)$/);
 	if (!match) {
 		throw new Error('No authentication header');
 	}
-	return jwtVerify(match[1], allowedIssuers);
+	return jwtVerify(match[1], options);
 };
 
 export const jwtDeleteKid = (issuer: string, kid: string) => {
 	icl.deleteKid(issuer, kid);
-}
+};

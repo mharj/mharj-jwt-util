@@ -1,13 +1,13 @@
 {
   "name": "mharj-jwt-util",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "JWT util",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "mocha": "mocha",
     "prepublishOnly": "npm run build",
-    "test": "nyc mocha test/*.ts"
+    "test": "nyc mocha"
   },
   "repository": {
     "type": "git",
@@ -42,23 +42,23 @@
     "dist"
   ],
   "devDependencies": {
-    "@types/chai": "^4.1.7",
-    "@types/chai-as-promised": "^7.1.0",
-    "@types/jsonwebtoken": "^8.3.0",
-    "@types/mocha": "^5.2.6",
-    "@types/node": "^11.10.4",
+    "@types/chai": "^4.2.9",
+    "@types/chai-as-promised": "^7.1.2",
+    "@types/jsonwebtoken": "^8.3.7",
+    "@types/mocha": "^7.0.1",
+    "@types/node": "^13.7.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "mocha": "^6.0.2",
-    "nyc": "^13.3.0",
-    "source-map-support": "^0.5.10",
-    "ts-node": "^8.0.2",
-    "tslint": "^5.13.1",
+    "mocha": "^7.0.1",
+    "nyc": "^15.0.0",
+    "source-map-support": "^0.5.16",
+    "ts-node": "^8.6.2",
+    "tslint": "^6.0.0",
     "tslint-config-prettier": "^1.18.0",
-    "typescript": "^3.3.3333"
+    "typescript": "^3.7.5"
   },
   "dependencies": {
-    "cross-fetch": "^3.0.1",
-    "jsonwebtoken": "^8.5.0"
+    "cross-fetch": "^3.0.4",
+    "jsonwebtoken": "^8.5.1"
   }
 }
