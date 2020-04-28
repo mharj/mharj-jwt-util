@@ -42,20 +42,21 @@
     "dist"
   ],
   "devDependencies": {
-    "@types/chai": "^4.2.9",
+    "@types/chai": "^4.2.11",
     "@types/chai-as-promised": "^7.1.2",
-    "@types/jsonwebtoken": "^8.3.7",
-    "@types/mocha": "^7.0.1",
-    "@types/node": "^13.7.1",
+    "@types/jsonwebtoken": "^8.3.9",
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^13.13.4",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "mocha": "^7.0.1",
-    "nyc": "^15.0.0",
-    "source-map-support": "^0.5.16",
-    "ts-node": "^8.6.2",
-    "tslint": "^6.0.0",
+    "dotenv": "^8.2.0",
+    "mocha": "^7.1.2",
+    "nyc": "^15.0.1",
+    "source-map-support": "^0.5.19",
+    "ts-node": "^8.9.1",
+    "tslint": "^6.1.2",
     "tslint-config-prettier": "^1.18.0",
-    "typescript": "^3.7.5"
+    "typescript": "^3.8.3"
   },
   "dependencies": {
     "cross-fetch": "^3.0.4",

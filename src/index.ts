@@ -6,6 +6,8 @@ const icl = new IssuerCertLoader();
 
 const cache = new ExpireCache<any>();
 
+type JwtErrorType = jwt.JsonWebTokenError | jwt.NotBeforeError | jwt.TokenExpiredError;
+
 export interface ITokenPayload {
 	aud?: string;
 	exp?: number;
@@ -66,7 +68,7 @@ export const jwtVerify = async <T extends object>(token: string, options?: jwt.V
 	}
 	const certString = await icl.getCert(decoded.payload.iss, kid);
 	return new Promise((resolve, reject) => {
-		jwt.verify(token, buildCertFrame(certString), options, (err: Error, verifiedDecode: T & ITokenPayload) => {
+		jwt.verify(token, buildCertFrame(certString), options, (err: JwtErrorType | null, verifiedDecode: T & ITokenPayload) => {
 			if (err) {
 				reject(err);
 			} else {

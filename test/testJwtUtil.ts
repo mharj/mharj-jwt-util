@@ -1,4 +1,7 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
 process.env.NODE_ENV = 'testing';
+import 'cross-fetch/polyfill';
 import {expect} from 'chai';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
@@ -8,9 +11,18 @@ import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, wasItCached} fro
 chai.use(chaiAsPromised);
 
 let GOOGLE_ID_TOKEN: string;
+let AZURE_ACCESS_TOKEN: string;
 
 describe('jwtUtil', () => {
-	before(() => {
+	before(async () => {
+		const body = `client_id=${process.env.AZ_CLIENT_ID}&client_secret=${process.env.AZ_CLIENT_SECRET}&grant_type=client_credentials&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default`;
+		const headers = new Headers();
+		headers.set('Content-Type','application/x-www-form-urlencoded');
+		headers.set('Content-Length',''+body.length);
+		const req = await fetch(`https://login.microsoftonline.com/${process.env.AZ_TENANT_ID}/oauth2/v2.0/token`, {method: 'POST',headers,  body});
+		const data = await req.json();
+		AZURE_ACCESS_TOKEN = data.access_token;
+		console.log('AZURE_ACCESS_TOKEN', AZURE_ACCESS_TOKEN);
 		if (!process.env.GOOGLE_ID_TOKEN) {
 			throw new Error('missing GOOGLE_ID_TOKEN env');
 		}
