@@ -34,7 +34,8 @@ export class IssuerCertLoader {
 		// if we don't have issuer yet loaded, or kid can't be found from list .. load cert list for issuer
 		if (!issuer || !issuer.certs.find((c) => c.kid === kid)) {
 			const certList = await this.getCertList(issuerUrl);
-			if (issuer) { // we just update keys
+			if (issuer) {
+				// we just update keys
 				issuer.certs = certList.keys;
 			} else {
 				this.certs.push({url: issuerUrl, certs: certList.keys});
@@ -46,7 +47,8 @@ export class IssuerCertLoader {
 		}
 		const cert = issuer.certs.find((c) => c.kid === kid);
 		if (cert) {
-			if (cert.n && cert.e) { // we have modulo and exponent, build PEM
+			if (cert.n && cert.e) {
+				// we have modulo and exponent, build PEM
 				cert.x5c = [rsaPublicKeyPem(cert.n, cert.e)];
 				return Promise.resolve(Buffer.from(cert.x5c[0]));
 			} else if (cert.x5c) {

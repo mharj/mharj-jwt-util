@@ -1,32 +1,78 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 process.env.NODE_ENV = 'testing';
-import 'cross-fetch/polyfill';
 import {expect} from 'chai';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
+import 'cross-fetch/polyfill';
+import {google} from 'googleapis';
 import * as jwt from 'jsonwebtoken';
 import 'mocha';
 import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, wasItCached} from '../src';
+import {Credentials} from 'google-auth-library';
+// tslint:disable: no-unused-expression
 chai.use(chaiAsPromised);
 
 let GOOGLE_ID_TOKEN: string;
 let AZURE_ACCESS_TOKEN: string;
 
+function getAccessToken(): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const jwtClient = new google.auth.JWT(
+			process.env.GOOGLE_CLIENT_EMAIL,
+			undefined,
+			process.env.GOOGLE_CLIENT_KEY,
+			['openid', 'https://www.googleapis.com/auth/cloud-platform'],
+			undefined,
+		);
+		jwtClient.authorize((err: Error, {access_token}: Credentials) => {
+			if (err) {
+				reject(err);
+				return;
+			}
+			if (!access_token) {
+				reject(new Error('no access token'));
+			} else {
+				resolve(access_token);
+			}
+		});
+	});
+}
+
+const getGoogleIdToken = async () => {
+	const body = JSON.stringify({
+		audience: process.env.GOOGLE_CLIENT_EMAIL,
+		delegates: [],
+		includeEmail: true,
+	});
+	const headers = new Headers();
+	headers.set('Authorization', 'Bearer ' + (await getAccessToken()));
+	headers.set('Content-Type', 'application/json');
+	headers.set('Content-Length', '' + body.length);
+	const res = await fetch(`https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${process.env.GOOGLE_CLIENT_EMAIL}:generateIdToken`, {
+		body,
+		headers,
+		method: 'POST',
+	});
+	const data = await res.json();
+	return data.token;
+};
+
+const getAzureAccessToken = async () => {
+	// NOTE: Azure v2.0 accessToken is not atm valid JWT token (https://github.com/microsoft/azure-spring-boot/issues/476)
+	const body = `client_id=${process.env.AZ_CLIENT_ID}&client_secret=${process.env.AZ_CLIENT_SECRET}&grant_type=client_credentials&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default`;
+	const headers = new Headers();
+	headers.set('Content-Type', 'application/x-www-form-urlencoded');
+	headers.set('Content-Length', '' + body.length);
+	const req = await fetch(`https://login.microsoftonline.com/${process.env.AZ_TENANT_ID}/oauth2/token`, {method: 'POST', headers, body});
+	const data = await req.json();
+	return data.access_token;
+};
+
 describe('jwtUtil', () => {
 	before(async () => {
-		const body = `client_id=${process.env.AZ_CLIENT_ID}&client_secret=${process.env.AZ_CLIENT_SECRET}&grant_type=client_credentials&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default`;
-		const headers = new Headers();
-		headers.set('Content-Type','application/x-www-form-urlencoded');
-		headers.set('Content-Length',''+body.length);
-		const req = await fetch(`https://login.microsoftonline.com/${process.env.AZ_TENANT_ID}/oauth2/v2.0/token`, {method: 'POST',headers,  body});
-		const data = await req.json();
-		AZURE_ACCESS_TOKEN = data.access_token;
-		console.log('AZURE_ACCESS_TOKEN', AZURE_ACCESS_TOKEN);
-		if (!process.env.GOOGLE_ID_TOKEN) {
-			throw new Error('missing GOOGLE_ID_TOKEN env');
-		}
-		GOOGLE_ID_TOKEN = process.env.GOOGLE_ID_TOKEN;
+		AZURE_ACCESS_TOKEN = await getAzureAccessToken();
+		GOOGLE_ID_TOKEN = await getGoogleIdToken();
 	});
 	it('Test expire cache', () => {
 		const cache = testGetCache();
@@ -37,6 +83,7 @@ describe('jwtUtil', () => {
 	});
 	it('Test Google IdToken', async () => {
 		const decode = await jwtVerify(GOOGLE_ID_TOKEN as string);
+
 		expect(decode).not.to.be.null;
 		expect(wasItCached()).to.be.eq(false);
 	});
@@ -81,7 +128,7 @@ describe('jwtUtil', () => {
 		expect(decode).not.to.be.null;
 	});
 	it('test Azure ID Token ', async () => {
-		const decode = await jwtVerify(process.env.AZURE_ID_TOKEN as string);
+		const decode = await jwtVerify(AZURE_ACCESS_TOKEN);
 		expect(decode).not.to.be.null;
 	});
 });
