@@ -45,6 +45,9 @@ export class IssuerCertLoader {
 		}
 		return false;
 	}
+	public haveIssuer(issuerUrl: string) {
+		return this.certs.find((i) => i.url === issuerUrl) ? true : false;
+	}
 	private async getIssuerCert(issuer: IIssuerCerts, kid: string) {
 		let cert = issuer.certs.find((c) => c.kid === kid);
 		if (!cert) {

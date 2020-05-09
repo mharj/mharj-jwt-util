@@ -119,3 +119,7 @@ export const jwtBearerVerify = <T extends object>(authHeader: string, options?: 
 export const jwtDeleteKid = (issuer: string, kid: string) => {
 	icl.deleteKid(issuer, kid);
 };
+
+export const jwtHaveIssuer = (issuer: string) => {
+	return icl.haveIssuer(issuer);
+};

@@ -8,7 +8,7 @@ import 'cross-fetch/polyfill';
 import {google} from 'googleapis';
 import * as jwt from 'jsonwebtoken';
 import 'mocha';
-import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, wasItCached, jwtVerifyPromise} from '../src';
+import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, wasItCached, jwtVerifyPromise, jwtHaveIssuer} from '../src';
 import {Credentials} from 'google-auth-library';
 // tslint:disable: no-unused-expression
 chai.use(chaiAsPromised);
@@ -118,9 +118,11 @@ describe('jwtUtil', () => {
 	});
 	describe('tokens', () => {
 		it('Test Google IdToken', async () => {
+			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
 			const decode = await jwtVerify(GOOGLE_ID_TOKEN as string);
 			expect(decode).not.to.be.null;
 			expect(wasItCached()).to.be.eq(false);
+			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(true);
 		});
 		it('Test Google IdToken cached', async () => {
 			const decode = await jwtVerify(GOOGLE_ID_TOKEN as string);
@@ -159,7 +161,7 @@ describe('jwtUtil', () => {
 		it('Test delete kid and check force reload', async () => {
 			const decoded = jwt.decode(GOOGLE_ID_TOKEN, {complete: true}) as any;
 			jwtDeleteKid(decoded.payload.iss, decoded.header.kid);
-			jwtDeleteKid(decoded.payload.iss, decoded.header.kid);
+			jwtDeleteKid('test', decoded.header.kid);
 			const decode = await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
 			expect(decode).not.to.be.null;
 		});
