@@ -18,6 +18,7 @@ let AZURE_ACCESS_TOKEN: string;
 
 function getAccessToken(): Promise<string> {
 	console.log('getAccessToken');
+	console.log(process.env.GOOGLE_CLIENT_KEY);
 	return new Promise((resolve, reject) => {
 		const jwtClient = new google.auth.JWT(
 			process.env.GOOGLE_CLIENT_EMAIL,
