@@ -51,11 +51,15 @@ const getGoogleIdToken = async () => {
 	headers.set('Authorization', 'Bearer ' + (await getAccessToken()));
 	headers.set('Content-Type', 'application/json');
 	headers.set('Content-Length', '' + body.length);
+	console.log('getGoogleIdToken fetch');
 	const res = await fetch(`https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${process.env.GOOGLE_CLIENT_EMAIL}:generateIdToken`, {
 		body,
 		headers,
 		method: 'POST',
 	});
+	if (res.status !== 200) {
+		throw new Error('getGoogleIdToken code ' + res.status);
+	}
 	const data = await res.json();
 	return data.token;
 };
@@ -67,8 +71,12 @@ const getAzureAccessToken = async () => {
 	const headers = new Headers();
 	headers.set('Content-Type', 'application/x-www-form-urlencoded');
 	headers.set('Content-Length', '' + body.length);
-	const req = await fetch(`https://login.microsoftonline.com/${process.env.AZ_TENANT_ID}/oauth2/token`, {method: 'POST', headers, body});
-	const data = await req.json();
+	console.log('getAzureAccessToken fetch');
+	const res = await fetch(`https://login.microsoftonline.com/${process.env.AZ_TENANT_ID}/oauth2/token`, {method: 'POST', headers, body});
+	if (res.status !== 200) {
+		throw new Error('getAzureAccessToken code ' + res.status);
+	}
+	const data = await res.json();
 	return data.access_token;
 };
 
