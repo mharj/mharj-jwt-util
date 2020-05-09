@@ -1,6 +1,6 @@
 # mharj-jwt-util
 
-[![Build Status](https://mharj.visualstudio.com/mharj-jwt-util/_apis/build/status/mharj.mharj-jwt-util?branchName=master)](https://mharj.visualstudio.com/mharj-jwt-util/_build/latest?definitionId=3&branchName=master) ![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/mharj/mharj-jwt-util/3)
+[![Build Status](https://mharj.visualstudio.com/mharj-jwt-util/_apis/build/status/mharj.mharj-jwt-util?branchName=master)](https://mharj.visualstudio.com/mharj-jwt-util/_build/latest?definitionId=3&branchName=master) ![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/mharj/mharj-jwt-util/3) [![Maintainability](https://api.codeclimate.com/v1/badges/a60873c223b5bafadb1f/maintainability)](https://codeclimate.com/github/mharj/mharj-jwt-util/maintainability)
 
 ## Json Webtoken Utility to validate OpenID tokens against issuer public ssl keys
 
