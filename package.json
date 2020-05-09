@@ -7,8 +7,16 @@
     "build": "tsc",
     "mocha": "mocha",
     "prepublishOnly": "npm run build",
-    "test": "nyc mocha",
+    "test": "nyc mocha ./test/**/*.ts",
     "azure-test": "nyc mocha --reporter mocha-junit-reporter ./test/**/*.ts"
+  },
+  "mocha": {
+    "recursive": true,
+    "exit": true,
+    "require": [
+      "ts-node/register",
+      "source-map-support/register"
+    ]
   },
   "repository": {
     "type": "git",

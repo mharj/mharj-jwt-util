@@ -1,7 +1,7 @@
 import * as jwt from 'jsonwebtoken';
-import { ExpireCache } from './ExpireCache';
-import { IssuerCertLoader } from './issuerCertLoader';
-import { buildCertFrame } from './rsaPublicKeyPem';
+import {ExpireCache} from './ExpireCache';
+import {IssuerCertLoader} from './issuerCertLoader';
+import {buildCertFrame} from './rsaPublicKeyPem';
 const icl = new IssuerCertLoader();
 
 const cache = new ExpireCache<any>();
@@ -31,17 +31,26 @@ export const wasItCached = () => {
 };
 
 export const testGetCache = () => {
+	/* istanbul ignore else  */
 	if (process.env.NODE_ENV === 'testing') {
 		return cache;
 	} else {
 		throw new Error('only for testing');
 	}
 };
-type secretOrPublicKeyType = string | Buffer | {
-	key: string | Buffer;
-	passphrase: string;
-} | jwt.GetPublicKeyOrSecret;
-const jwtVerifyPromise = (token: string, secretOrPublicKey: secretOrPublicKeyType, options?: jwt.VerifyOptions | undefined): Promise<object | undefined> => {
+type secretOrPublicKeyType =
+	| string
+	| Buffer
+	| {
+			key: string | Buffer;
+			passphrase: string;
+	  }
+	| jwt.GetPublicKeyOrSecret;
+export const jwtVerifyPromise = (
+	token: string,
+	secretOrPublicKey: secretOrPublicKeyType,
+	options?: jwt.VerifyOptions | undefined,
+): Promise<object | undefined> => {
 	return new Promise<object | undefined>((resolve, reject) => {
 		jwt.verify(token, secretOrPublicKey, options, (err: jwt.VerifyErrors | null, decoded: object | undefined) => {
 			if (err) {
@@ -51,10 +60,10 @@ const jwtVerifyPromise = (token: string, secretOrPublicKey: secretOrPublicKeyTyp
 			}
 		});
 	});
-}
+};
 
 const getKeyIdAndSetOptions = (decoded: ITokenStructure, options: jwt.VerifyOptions | undefined) => {
-	const { kid, alg, typ } = decoded.header;
+	const {kid, alg, typ} = decoded.header;
 	if (!kid || typ !== 'JWT') {
 		throw new Error('token missing required parameters');
 	}
@@ -65,7 +74,7 @@ const getKeyIdAndSetOptions = (decoded: ITokenStructure, options: jwt.VerifyOpti
 		options.algorithms = [alg];
 	}
 	return kid;
-}
+};
 
 /**
  * Verify JWT token against issuer public certs
@@ -79,7 +88,7 @@ export const jwtVerify = async <T extends object>(token: string, options?: jwt.V
 		return cached;
 	}
 	isCached = false;
-	const decoded = jwt.decode(token, { complete: true }) as ITokenStructure;
+	const decoded = jwt.decode(token, {complete: true}) as ITokenStructure;
 	if (!decoded) {
 		throw new Error("Can't decode token");
 	}
@@ -87,7 +96,7 @@ export const jwtVerify = async <T extends object>(token: string, options?: jwt.V
 		throw new Error('token missing required parameters');
 	}
 	const certString = await icl.getCert(decoded.payload.iss, getKeyIdAndSetOptions(decoded, options));
-	const verifiedDecode = await jwtVerifyPromise(token, buildCertFrame(certString), options) as unknown as T & ITokenPayload;
+	const verifiedDecode = ((await jwtVerifyPromise(token, buildCertFrame(certString), options)) as unknown) as T & ITokenPayload;
 	if (verifiedDecode.exp) {
 		cache.put(token, verifiedDecode, verifiedDecode.exp * 1000);
 	}

@@ -1,5 +1,5 @@
 import 'cross-fetch/polyfill';
-import { rsaPublicKeyPem } from './rsaPublicKeyPem';
+import {rsaPublicKeyPem} from './rsaPublicKeyPem';
 
 interface IIssuerCerts {
 	url: string;
@@ -26,26 +26,12 @@ interface IOpenIdConfigCache extends IOpenIdConfig {
 interface ICertList {
 	keys: ICertItem[];
 }
-const configCache: { [key: string]: IOpenIdConfigCache } = {};
+const configCache: {[key: string]: IOpenIdConfigCache} = {};
 export class IssuerCertLoader {
 	private certs: IIssuerCerts[] = [];
 	public async getCert(issuerUrl: string, kid: string): Promise<Buffer | string> {
-		let issuer = this.certs.find((i) => i.url === issuerUrl);
-		// if we don't have issuer yet loaded, or kid can't be found from list .. load cert list for issuer
-		if (!issuer || !issuer.certs.find((c) => c.kid === kid)) {
-			const certList = await this.getCertList(issuerUrl);
-			if (issuer) {
-				// we just update keys
-				issuer.certs = certList.keys;
-			} else {
-				this.certs.push({ url: issuerUrl, certs: certList.keys });
-			}
-		}
-		issuer = this.certs.find((i) => i.url === issuerUrl);
-		if (!issuer) {
-			throw new Error('something strange - still no issuer found!');
-		}
-		const cert = issuer.certs.find((c) => c.kid === kid);
+		const issuer = await this.getIssuerCerts(issuerUrl);
+		const cert = await this.getIssuerCert(issuer, kid);
 		return this.buildCert(cert);
 	}
 	public deleteKid(issuerUrl: string, kid: string): boolean {
@@ -59,17 +45,47 @@ export class IssuerCertLoader {
 		}
 		return false;
 	}
+	private async getIssuerCert(issuer: IIssuerCerts, kid: string) {
+		let cert = issuer.certs.find((c) => c.kid === kid);
+		if (!cert) {
+			issuer = await this.pullIssuerCerts(issuer.url);
+		}
+		cert = issuer.certs.find((c) => c.kid === kid);
+		if (!cert) {
+			throw new Error('something strange - still no cert found for issuer!');
+		}
+		return cert;
+	}
+	private async getIssuerCerts(issuerUrl: string) {
+		let issuer = this.certs.find((i) => i.url === issuerUrl);
+		if (!issuer) {
+			issuer = await this.pullIssuerCerts(issuerUrl);
+		}
+		if (!issuer) {
+			throw new Error('something strange - still no issuer found!');
+		}
+		return issuer;
+	}
+	private async pullIssuerCerts(issuerUrl: string) {
+		const certList = await this.getCertList(issuerUrl);
+		const issuer: IIssuerCerts = {
+			url: issuerUrl,
+			certs: certList.keys,
+		};
+		this.certs.push(issuer);
+		return issuer;
+	}
+
 	private buildCert(cert: ICertItem | undefined): Promise<Buffer | string> {
-		if (cert) {
-			if (cert.n && cert.e) {
-				// we have modulo and exponent, build PEM
-				cert.x5c = [rsaPublicKeyPem(cert.n, cert.e)];
-				return Promise.resolve(Buffer.from(cert.x5c[0]));
-			} else if (cert.x5c) {
-				return Promise.resolve(Buffer.from(cert.x5c[0]));
-			} else {
-				throw new Error('no cert found');
-			}
+		if (!cert) {
+			throw new Error('no cert found');
+		}
+		if (cert.n && cert.e) {
+			// we have modulo and exponent, build PEM
+			cert.x5c = [rsaPublicKeyPem(cert.n, cert.e)];
+			return Promise.resolve(Buffer.from(cert.x5c[0]));
+		} else if (cert.x5c) {
+			return Promise.resolve(Buffer.from(cert.x5c[0]));
 		} else {
 			throw new Error('no cert found');
 		}
@@ -87,7 +103,7 @@ export class IssuerCertLoader {
 			return fetch(configUrl)
 				.then((resp) => resp.json())
 				.then((config: IOpenIdConfig) => {
-					configCache[issuerUrl] = { ...config, expires: now + 86400000 } as IOpenIdConfigCache; // cache config 24h
+					configCache[issuerUrl] = {...config, expires: now + 86400000} as IOpenIdConfigCache; // cache config 24h
 					return Promise.resolve(config);
 				});
 		}

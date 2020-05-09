@@ -8,7 +8,7 @@ import 'cross-fetch/polyfill';
 import {google} from 'googleapis';
 import * as jwt from 'jsonwebtoken';
 import 'mocha';
-import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, wasItCached} from '../src';
+import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, wasItCached, jwtVerifyPromise} from '../src';
 import {Credentials} from 'google-auth-library';
 // tslint:disable: no-unused-expression
 chai.use(chaiAsPromised);
@@ -24,9 +24,7 @@ function azureMultilineEnvFix(input: string | undefined) {
 }
 
 function getAccessToken(): Promise<string> {
-	console.log('getAccessToken');
 	const clientKey = azureMultilineEnvFix(process.env.GOOGLE_CLIENT_KEY);
-	console.log(clientKey);
 	return new Promise((resolve, reject) => {
 		const jwtClient = new google.auth.JWT(
 			process.env.GOOGLE_CLIENT_EMAIL,
@@ -50,7 +48,6 @@ function getAccessToken(): Promise<string> {
 }
 
 const getGoogleIdToken = async () => {
-	console.log('getGoogleIdToken');
 	const body = JSON.stringify({
 		audience: process.env.GOOGLE_CLIENT_EMAIL,
 		delegates: [],
@@ -60,7 +57,6 @@ const getGoogleIdToken = async () => {
 	headers.set('Authorization', 'Bearer ' + (await getAccessToken()));
 	headers.set('Content-Type', 'application/json');
 	headers.set('Content-Length', '' + body.length);
-	console.log('getGoogleIdToken fetch');
 	const res = await fetch(`https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${process.env.GOOGLE_CLIENT_EMAIL}:generateIdToken`, {
 		body,
 		headers,
@@ -74,13 +70,11 @@ const getGoogleIdToken = async () => {
 };
 
 const getAzureAccessToken = async () => {
-	console.log('getAzureAccessToken');
 	// NOTE: Azure v2.0 accessToken is not atm valid JWT token (https://github.com/microsoft/azure-spring-boot/issues/476)
 	const body = `client_id=${process.env.AZ_CLIENT_ID}&client_secret=${process.env.AZ_CLIENT_SECRET}&grant_type=client_credentials&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default`;
 	const headers = new Headers();
 	headers.set('Content-Type', 'application/x-www-form-urlencoded');
 	headers.set('Content-Length', '' + body.length);
-	console.log('getAzureAccessToken fetch');
 	const res = await fetch(`https://login.microsoftonline.com/${process.env.AZ_TENANT_ID}/oauth2/token`, {method: 'POST', headers, body});
 	if (res.status !== 200) {
 		throw new Error('getAzureAccessToken code ' + res.status);
@@ -94,6 +88,9 @@ describe('jwtUtil', () => {
 		this.timeout(30000);
 		AZURE_ACCESS_TOKEN = await getAzureAccessToken();
 		GOOGLE_ID_TOKEN = await getGoogleIdToken();
+	});
+	it('should fail jwtVerifyPromise with broken data', async () => {
+		expect(jwtVerifyPromise('qwe', 'qwe')).to.be.rejected;
 	});
 	it('Test expire cache', () => {
 		const cache = testGetCache();
