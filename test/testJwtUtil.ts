@@ -70,7 +70,8 @@ const getAzureAccessToken = async () => {
 };
 
 describe('jwtUtil', () => {
-	before(async () => {
+	before(async function () {
+		this.timeout(10000);
 		AZURE_ACCESS_TOKEN = await getAzureAccessToken();
 		GOOGLE_ID_TOKEN = await getGoogleIdToken();
 	});
