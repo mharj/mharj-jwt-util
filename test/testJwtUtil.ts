@@ -17,6 +17,7 @@ let GOOGLE_ID_TOKEN: string;
 let AZURE_ACCESS_TOKEN: string;
 
 function getAccessToken(): Promise<string> {
+	console.log('getAccessToken');
 	return new Promise((resolve, reject) => {
 		const jwtClient = new google.auth.JWT(
 			process.env.GOOGLE_CLIENT_EMAIL,
@@ -40,6 +41,7 @@ function getAccessToken(): Promise<string> {
 }
 
 const getGoogleIdToken = async () => {
+	console.log('getGoogleIdToken');
 	const body = JSON.stringify({
 		audience: process.env.GOOGLE_CLIENT_EMAIL,
 		delegates: [],
@@ -59,6 +61,7 @@ const getGoogleIdToken = async () => {
 };
 
 const getAzureAccessToken = async () => {
+	console.log('getAzureAccessToken');
 	// NOTE: Azure v2.0 accessToken is not atm valid JWT token (https://github.com/microsoft/azure-spring-boot/issues/476)
 	const body = `client_id=${process.env.AZ_CLIENT_ID}&client_secret=${process.env.AZ_CLIENT_SECRET}&grant_type=client_credentials&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default`;
 	const headers = new Headers();
@@ -71,7 +74,7 @@ const getAzureAccessToken = async () => {
 
 describe('jwtUtil', () => {
 	before(async function () {
-		this.timeout(10000);
+		this.timeout(30000);
 		AZURE_ACCESS_TOKEN = await getAzureAccessToken();
 		GOOGLE_ID_TOKEN = await getGoogleIdToken();
 	});
