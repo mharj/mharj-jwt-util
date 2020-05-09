@@ -26,15 +26,15 @@ function getAccessToken(): Promise<string> {
 			['openid', 'https://www.googleapis.com/auth/cloud-platform'],
 			undefined,
 		);
-		jwtClient.authorize((err: Error, {access_token}: Credentials) => {
+		jwtClient.authorize((err: Error, cred: Credentials) => {
 			if (err) {
 				reject(err);
 				return;
 			}
-			if (!access_token) {
+			if (!cred || !cred.access_token) {
 				reject(new Error('no access token'));
 			} else {
-				resolve(access_token);
+				resolve(cred.access_token);
 			}
 		});
 	});
