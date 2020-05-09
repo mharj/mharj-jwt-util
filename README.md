@@ -1,6 +1,6 @@
 # mharj-jwt-util
 
-[![Build Status](https://mharj.visualstudio.com/Test/_apis/build/status/mharj.mharj-jwt-util?branchName=master)](https://mharj.visualstudio.com/Test/_build/latest?definitionId=3&branchName=master)
+[![Build Status](https://mharj.visualstudio.com/mharj-jwt-util/_apis/build/status/mharj.mharj-jwt-util?branchName=master)](https://mharj.visualstudio.com/mharj-jwt-util/_build/latest?definitionId=3&branchName=master)
 
 ## Json Webtoken Utility to validate OpenID tokens against issuer public ssl keys
 
