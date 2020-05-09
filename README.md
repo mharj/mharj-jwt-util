@@ -1,5 +1,7 @@
 # mharj-jwt-util
 
+[![Build Status](https://mharj.visualstudio.com/Test/_apis/build/status/mharj.mharj-jwt-util?branchName=master)](https://mharj.visualstudio.com/Test/_build/latest?definitionId=3&branchName=master)
+
 ## Json Webtoken Utility to validate OpenID tokens against issuer public ssl keys
 
 - Can build public PEM cert from modulus + exponent (i.e. Google)
