@@ -16,14 +16,22 @@ chai.use(chaiAsPromised);
 let GOOGLE_ID_TOKEN: string;
 let AZURE_ACCESS_TOKEN: string;
 
+function azureMultilineEnvFix(input: string | undefined) {
+	if (input === undefined) {
+		return undefined;
+	}
+	return input.replace(/\\n/g, '\n');
+}
+
 function getAccessToken(): Promise<string> {
 	console.log('getAccessToken');
-	console.log(process.env.GOOGLE_CLIENT_KEY);
+	const clientKey = azureMultilineEnvFix(process.env.GOOGLE_CLIENT_KEY);
+	console.log(clientKey);
 	return new Promise((resolve, reject) => {
 		const jwtClient = new google.auth.JWT(
 			process.env.GOOGLE_CLIENT_EMAIL,
 			undefined,
-			process.env.GOOGLE_CLIENT_KEY,
+			clientKey,
 			['openid', 'https://www.googleapis.com/auth/cloud-platform'],
 			undefined,
 		);
