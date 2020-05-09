@@ -65,7 +65,7 @@ export const jwtVerifyPromise = (
 const getKeyIdAndSetOptions = (decoded: ITokenStructure, options: jwt.VerifyOptions | undefined) => {
 	const {kid, alg, typ} = decoded.header;
 	if (!kid || typ !== 'JWT') {
-		throw new Error('token missing required parameters');
+		throw new Error('token header missing required parameters');
 	}
 	if (!options) {
 		options = {};
