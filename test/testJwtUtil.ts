@@ -10,11 +10,14 @@ import * as jwt from 'jsonwebtoken';
 import 'mocha';
 import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, wasItCached, jwtVerifyPromise, jwtHaveIssuer} from '../src';
 import {Credentials} from 'google-auth-library';
+import {IssuerCertLoader} from '../src/issuerCertLoader';
+import {buildCertFrame} from '../src/rsaPublicKeyPem';
 // tslint:disable: no-unused-expression
 chai.use(chaiAsPromised);
 
 let GOOGLE_ID_TOKEN: string;
 let AZURE_ACCESS_TOKEN: string;
+let icl: IssuerCertLoader;
 
 function azureMultilineEnvFix(input: string | undefined) {
 	if (input === undefined) {
@@ -168,6 +171,32 @@ describe('jwtUtil', () => {
 		it('test Azure ID Token ', async () => {
 			const decode = await jwtVerify(AZURE_ACCESS_TOKEN);
 			expect(decode).not.to.be.null;
+		});
+	});
+	describe('test IssuerCertLoader', () => {
+		before(async () => {
+			icl = new IssuerCertLoader();
+		});
+		it('should throw if issuer is not found', async () => {
+			await expect(icl.getCert('https://123qweasdqwe123zzz', 'unknown')).to.be.rejected;
+		});
+		it('should throw when get cert for unknown kid ', async () => {
+			await expect(icl.getCert('https://accounts.google.com', 'unknown')).to.be.rejectedWith('something strange - still no cert found for issuer!');
+		});
+	});
+	describe('test buildCertFrame', () => {
+		it('should get RSA PUBLIC key structure as Buffer', async () => {
+			const data = Buffer.from(
+				'MIIBCgKCAQEA18uZ3P3IgOySlnOsxeIN5WUKzvlm6evPDMFbmXPtTF0GMe7tD2JPfai2UGn74s7AFwqxWO5DQZRu6VfQUux8uMR4J7nxm1Kf//7pVEVJJyDuL5a8PARRYQtH68w+0IZxcFOkgsSdhtIzPQ2jj4mmRzWXIwh8M/8pJ6qiOjvjF9bhEq0CC/f27BnljPaFn8hxY69pCoxenWWqFcsUhFZvCMthhRubAbBilDr74KaXS5xCgySBhPzwekD9/NdCUuCsdqavd4T+VWnbplbB8YsC+R00FptBFKuTyT9zoGZjWZilQVmj7v3k8jXqYB2nWKgTAfwjmiyKz78FHkaE+nCIDwIDAQAB',
+			);
+			expect(buildCertFrame(data)).to.be.a.instanceof(Buffer);
+		});
+		it('should fail if not correct Buffer', async () => {
+			expect(buildCertFrame.bind(null, Buffer.from(''))).to.be.throw('Cert data error');
+		});
+		it('should get secret key as string', async () => {
+			const data = 'secretKey';
+			expect(buildCertFrame(data)).to.be.a('string');
 		});
 	});
 });

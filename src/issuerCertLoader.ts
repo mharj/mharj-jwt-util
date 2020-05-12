@@ -64,6 +64,7 @@ export class IssuerCertLoader {
 		if (!issuer) {
 			issuer = await this.pullIssuerCerts(issuerUrl);
 		}
+		/* istanbul ignore if  */
 		if (!issuer) {
 			throw new Error('something strange - still no issuer found!');
 		}
@@ -79,10 +80,8 @@ export class IssuerCertLoader {
 		return issuer;
 	}
 
-	private buildCert(cert: ICertItem | undefined): Promise<Buffer | string> {
-		if (!cert) {
-			throw new Error('no cert found');
-		}
+	private buildCert(cert: ICertItem): Promise<Buffer | string> {
+		/* istanbul ignore else if  */
 		if (cert.n && cert.e) {
 			// we have modulo and exponent, build PEM
 			cert.x5c = [rsaPublicKeyPem(cert.n, cert.e)];
