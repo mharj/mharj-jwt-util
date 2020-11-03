@@ -55,7 +55,7 @@ export class IssuerCertLoader {
 		}
 		cert = issuer.certs.find((c) => c.kid === kid);
 		if (!cert) {
-			throw new Error('something strange - still no cert found for issuer!');
+			throw new Error(`no key Id '${kid}' found for issuer '${issuer.url}'`);
 		}
 		return cert;
 	}
@@ -66,7 +66,7 @@ export class IssuerCertLoader {
 		}
 		/* istanbul ignore if  */
 		if (!issuer) {
-			throw new Error('something strange - still no issuer found!');
+			throw new Error(`no '${issuer}' found!`);
 		}
 		return issuer;
 	}
