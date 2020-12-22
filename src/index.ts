@@ -1,3 +1,4 @@
+export {setJwtLogger} from './logger';
 import * as jwt from 'jsonwebtoken';
 import {ExpireCache} from './ExpireCache';
 import {IssuerCertLoader} from './issuerCertLoader';
@@ -6,7 +7,7 @@ const icl = new IssuerCertLoader();
 
 const cache = new ExpireCache<any>();
 
-export interface ITokenPayload {
+export interface ITokenPayloadCommon extends Record<string, any> {
 	aud?: string;
 	exp?: number;
 	iat?: number;
@@ -15,7 +16,9 @@ export interface ITokenPayload {
 	nonce?: string;
 }
 
-interface ITokenHeader {
+export type ITokenPayload<T = Record<string, any>> = ITokenPayloadCommon & T;
+
+interface ITokenHeader extends Record<string, any> {
 	kid?: string;
 	alg: jwt.Algorithm | undefined;
 	typ: string | undefined;
@@ -25,6 +28,7 @@ interface ITokenStructure {
 	header: ITokenHeader;
 	payload: ITokenPayload;
 }
+
 let isCached: boolean | undefined;
 export const wasItCached = () => {
 	return isCached;
@@ -38,20 +42,10 @@ export const testGetCache = () => {
 		throw new Error('only for testing');
 	}
 };
-type secretOrPublicKeyType =
-	| string
-	| Buffer
-	| {
-			key: string | Buffer;
-			passphrase: string;
-	  }
-	| jwt.GetPublicKeyOrSecret;
-export const jwtVerifyPromise = (
-	token: string,
-	secretOrPublicKey: secretOrPublicKeyType,
-	options?: jwt.VerifyOptions | undefined,
-): Promise<object | undefined> => {
-	return new Promise<object | undefined>((resolve, reject) => {
+
+type JwtVerifyPromiseFunc<T = Record<string, any>> = (...params: Parameters<typeof jwt.verify>) => Promise<ITokenPayload<T> | undefined>;
+export const jwtVerifyPromise: JwtVerifyPromiseFunc = (token, secretOrPublicKey, options?) => {
+	return new Promise<ITokenPayload | undefined>((resolve, reject) => {
 		jwt.verify(token, secretOrPublicKey, options, (err: jwt.VerifyErrors | null, decoded: object | undefined) => {
 			if (err) {
 				reject(err);
@@ -96,7 +90,7 @@ export const jwtVerify = async <T extends object>(token: string, options?: jwt.V
 		throw new Error('token missing required parameters');
 	}
 	const certString = await icl.getCert(decoded.payload.iss, getKeyIdAndSetOptions(decoded, options));
-	const verifiedDecode = ((await jwtVerifyPromise(token, buildCertFrame(certString), options)) as unknown) as T & ITokenPayload;
+	const verifiedDecode = (await jwtVerifyPromise(token, buildCertFrame(certString), options)) as T & ITokenPayload;
 	if (verifiedDecode.exp) {
 		cache.put(token, verifiedDecode, verifiedDecode.exp * 1000);
 	}

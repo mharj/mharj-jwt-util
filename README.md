@@ -41,4 +41,7 @@ jwtVerify(process.env.GOOGLE_ID_TOKEN)
 	.catch((err) => {
 		console.log(err);
 	});
+
+// attach logger to see http requests (console and log4js should be working)
+setJwtLogger(console);
 ```

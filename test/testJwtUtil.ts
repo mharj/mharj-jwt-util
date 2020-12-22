@@ -12,6 +12,7 @@ import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, wasItCached, jwt
 import {Credentials} from 'google-auth-library';
 import {IssuerCertLoader} from '../src/issuerCertLoader';
 import {buildCertFrame} from '../src/rsaPublicKeyPem';
+
 // tslint:disable: no-unused-expression
 chai.use(chaiAsPromised);
 
@@ -98,7 +99,7 @@ describe('jwtUtil', () => {
 		});
 	});
 	describe('jwtVerify', () => {
-		it('should fail if brokwn token', async () => {
+		it('should fail if broken token', async () => {
 			expect(jwtVerify('asd')).to.be.rejectedWith("Can't decode token");
 		});
 		it('should fail is issuer url is missing', async () => {
@@ -133,8 +134,14 @@ describe('jwtUtil', () => {
 			expect(wasItCached()).to.be.eq(true);
 		});
 		it('Test Google token as Bearer Token', async () => {
-			const decode = await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
-			expect(decode).not.to.be.null;
+			const decode = await jwtBearerVerify<{test?: string}>('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
+			expect(decode).not.to.be.undefined;
+			expect(decode.aud).not.to.be.undefined;
+			expect(decode.exp).not.to.be.undefined;
+			expect(decode.iat).not.to.be.undefined;
+			expect(decode.iss).not.to.be.undefined;
+			expect(decode.sub).not.to.be.undefined;
+			expect(decode.test).to.be.undefined;
 		});
 		it('Test non Bearer auth', async () => {
 			try {
@@ -178,7 +185,7 @@ describe('jwtUtil', () => {
 			icl = new IssuerCertLoader();
 		});
 		it('should throw if issuer is not found (hostname error)', async () => {
-			await expect(icl.getCert('https://123qweasdqwe123zzz', 'unknown')).to.be.rejected;
+			await expect(icl.getCert('https://123qweasdqwe123zzz/uuaaakkk/', 'unknown')).to.be.rejected;
 		});
 		it('should throw if issuer is not found (json error)', async () => {
 			await expect(icl.getCert('https://google.com', 'unknown')).to.be.rejected;
