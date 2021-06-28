@@ -4,11 +4,6 @@ import {URL} from 'url';
 import {logger} from './logger';
 import {rsaPublicKeyPem} from './rsaPublicKeyPem';
 
-interface IIssuerCerts {
-	url: string;
-	certs: ICertItem[];
-}
-
 interface ICertItem {
 	alg?: string;
 	kty: string;
@@ -30,21 +25,22 @@ interface ICertList {
 	keys: ICertItem[];
 }
 const configCache: {[key: string]: IOpenIdConfigCache} = {};
+
 export class IssuerCertLoader {
-	private certs: IIssuerCerts[] = [];
+	private certs: Record<string, ICertItem[] | undefined> = {};
 
 	public async getCert(issuerUrl: string, kid: string): Promise<Buffer | string> {
-		const issuer = await this.getIssuerCerts(issuerUrl);
-		const cert = await this.getIssuerCert(issuer, kid);
+		const certList = await this.getIssuerCerts(issuerUrl);
+		const cert = await this.getIssuerCert(certList, issuerUrl, kid);
 		return this.buildCert(cert);
 	}
 
 	public deleteKid(issuerUrl: string, kid: string): boolean {
-		const issuer = this.certs.find((i) => i.url === issuerUrl);
+		const issuer = this.certs[issuerUrl];
 		if (issuer) {
-			const certIndex = issuer.certs.findIndex((c) => c.kid === kid);
+			const certIndex = issuer.findIndex((c) => c.kid === kid);
 			if (certIndex !== -1) {
-				issuer.certs.splice(certIndex, 1);
+				issuer.splice(certIndex, 1);
 				return true;
 			}
 		}
@@ -52,25 +48,25 @@ export class IssuerCertLoader {
 	}
 
 	public haveIssuer(issuerUrl: string) {
-		return this.certs.find((i) => i.url === issuerUrl) ? true : false;
+		return this.certs[issuerUrl] ? true : false;
 	}
 
-	private async getIssuerCert(issuer: IIssuerCerts, kid: string) {
-		let cert = issuer.certs.find((c) => c.kid === kid);
+	private async getIssuerCert(certList: ICertItem[], issuerUrl: string, kid: string) {
+		let cert = certList.find((c) => c.kid === kid);
 		if (!cert) {
 			// we didn't find kid, reload all issuer certs
-			issuer = await this.pullIssuerCerts(issuer.url);
+			certList = await this.pullIssuerCerts(issuerUrl);
 		}
-		cert = issuer.certs.find((c) => c.kid === kid);
+		cert = certList.find((c) => c.kid === kid);
 		if (!cert) {
 			// after issuer certs update, we still don't have cert for kid, throw out
-			throw new Error(`no key Id '${kid}' found for issuer '${issuer.url}'`);
+			throw new Error(`no key Id '${kid}' found for issuer '${issuerUrl}'`);
 		}
 		return cert;
 	}
 
 	private async getIssuerCerts(issuerUrl: string) {
-		let issuer = this.certs.find((i) => i.url === issuerUrl);
+		let issuer = this.certs[issuerUrl];
 		if (!issuer) {
 			issuer = await this.pullIssuerCerts(issuerUrl);
 		}
@@ -81,15 +77,10 @@ export class IssuerCertLoader {
 		return issuer;
 	}
 
-	private async pullIssuerCerts(issuerUrl: string) {
+	private async pullIssuerCerts(issuerUrl: string): Promise<ICertItem[]> {
 		const certList = await this.getCertList(issuerUrl);
-		// store to certs array
-		const issuer: IIssuerCerts = {
-			url: issuerUrl,
-			certs: certList.keys,
-		};
-		this.certs.push(issuer);
-		return issuer;
+		this.certs[issuerUrl] = certList.keys;
+		return this.certs[issuerUrl] as ICertItem[];
 	}
 
 	private buildCert(cert: ICertItem): Promise<Buffer | string> {
