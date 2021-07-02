@@ -1,5 +1,7 @@
 export {setJwtLogger} from './logger';
+export {FileCertCache} from './cache/FileCertCache';
 import * as jwt from 'jsonwebtoken';
+import {CertCache} from './cache/CertCache';
 import {ExpireCache} from './ExpireCache';
 import {IssuerCertLoader} from './issuerCertLoader';
 import {buildCertFrame} from './rsaPublicKeyPem';
@@ -33,6 +35,10 @@ let isCached: boolean | undefined;
 export const wasItCached = () => {
 	return isCached;
 };
+
+export function useCache(cacheFunctions: CertCache) {
+	return icl.setCache(cacheFunctions);
+}
 
 export const testGetCache = () => {
 	/* istanbul ignore else  */

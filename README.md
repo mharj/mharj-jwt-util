@@ -45,3 +45,8 @@ jwtVerify(process.env.GOOGLE_ID_TOKEN)
 // attach logger to see http requests (console and log4js should be working)
 setJwtLogger(console);
 ```
+
+## Enable file caching
+```javascript
+await useCache(new FileCertCache({fileName: './certCache.json'}));
+```

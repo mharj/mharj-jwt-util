@@ -1,8 +1,13 @@
 import 'cross-fetch/polyfill';
 import {posix as path} from 'path';
 import {URL} from 'url';
+import {CertCache} from './cache/CertCache';
 import {logger} from './logger';
 import {rsaPublicKeyPem} from './rsaPublicKeyPem';
+export interface CertRecords {
+	_ts: number;
+	certs: Record<string, ICertItem[] | undefined>;
+}
 
 interface ICertItem {
 	alg?: string;
@@ -27,16 +32,32 @@ interface ICertList {
 const configCache: {[key: string]: IOpenIdConfigCache} = {};
 
 export class IssuerCertLoader {
-	private certs: Record<string, ICertItem[] | undefined> = {};
+	private store: CertRecords = {_ts: 0, certs: {}};
+	private cache: CertCache | undefined;
+	private cacheLoaded = false;
+	public async setCache(cache: CertCache) {
+		this.cache = cache;
+		await this.cache.handleInit();
+		this.cache.registerChangeCallback((certs) => {
+			logger().debug(`jwt-util handleUpdate ${this.countCerts()} certificates`);
+			this.store = certs;
+			this.cacheLoaded = true;
+		});
+	}
 
 	public async getCert(issuerUrl: string, kid: string): Promise<Buffer | string> {
+		if (!this.cacheLoaded && this.cache) {
+			this.store = await this.cache.handleLoad();
+			logger().debug(`jwt-util cacheLoaded ${this.countCerts()} certificates`);
+			this.cacheLoaded = true;
+		}
 		const certList = await this.getIssuerCerts(issuerUrl);
 		const cert = await this.getIssuerCert(certList, issuerUrl, kid);
 		return this.buildCert(cert);
 	}
 
 	public deleteKid(issuerUrl: string, kid: string): boolean {
-		const issuer = this.certs[issuerUrl];
+		const issuer = this.store.certs[issuerUrl];
 		if (issuer) {
 			const certIndex = issuer.findIndex((c) => c.kid === kid);
 			if (certIndex !== -1) {
@@ -48,7 +69,7 @@ export class IssuerCertLoader {
 	}
 
 	public haveIssuer(issuerUrl: string) {
-		return this.certs[issuerUrl] ? true : false;
+		return this.store.certs[issuerUrl] ? true : false;
 	}
 
 	private async getIssuerCert(certList: ICertItem[], issuerUrl: string, kid: string) {
@@ -66,7 +87,7 @@ export class IssuerCertLoader {
 	}
 
 	private async getIssuerCerts(issuerUrl: string) {
-		let issuer = this.certs[issuerUrl];
+		let issuer = this.store.certs[issuerUrl];
 		if (!issuer) {
 			issuer = await this.pullIssuerCerts(issuerUrl);
 		}
@@ -79,8 +100,21 @@ export class IssuerCertLoader {
 
 	private async pullIssuerCerts(issuerUrl: string): Promise<ICertItem[]> {
 		const certList = await this.getCertList(issuerUrl);
-		this.certs[issuerUrl] = certList.keys;
-		return this.certs[issuerUrl] as ICertItem[];
+		this.store.certs[issuerUrl] = certList.keys;
+		await this.saveCerts(); // we have a change
+		return this.store.certs[issuerUrl] as ICertItem[];
+	}
+
+	private async saveCerts() {
+		this.store._ts = new Date().getTime(); // update timestamp
+		if (this.cache) {
+			logger().debug(`jwt-util cacheSaved ${this.countCerts()} certificates`);
+			await this.cache.handleSave(this.store);
+		}
+	}
+
+	private countCerts() {
+		return Object.values(this.store.certs).reduce((last, current) => last + (current?.length || 0), 0);
 	}
 
 	private buildCert(cert: ICertItem): Promise<Buffer | string> {

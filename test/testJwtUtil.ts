@@ -1,4 +1,5 @@
 import * as dotenv from 'dotenv';
+import * as fs from 'fs';
 dotenv.config();
 process.env.NODE_ENV = 'testing';
 import {expect} from 'chai';
@@ -8,7 +9,7 @@ import 'cross-fetch/polyfill';
 import {google} from 'googleapis';
 import * as jwt from 'jsonwebtoken';
 import 'mocha';
-import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, wasItCached, jwtVerifyPromise, jwtHaveIssuer} from '../src';
+import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, wasItCached, jwtVerifyPromise, jwtHaveIssuer, useCache, FileCertCache} from '../src';
 import {Credentials} from 'google-auth-library';
 import {IssuerCertLoader} from '../src/issuerCertLoader';
 import {buildCertFrame} from '../src/rsaPublicKeyPem';
@@ -121,6 +122,12 @@ describe('jwtUtil', () => {
 		});
 	});
 	describe('tokens', () => {
+		before(async () => {
+			if (fs.existsSync('./unitTestCache.json')) {
+				await fs.promises.unlink('./unitTestCache.json');
+			}
+			await useCache(new FileCertCache({fileName: './unitTestCache.json', pretty: true}));
+		});
 		it('Test Google IdToken', async () => {
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
 			const decode = await jwtVerify(GOOGLE_ID_TOKEN as string);
@@ -178,6 +185,11 @@ describe('jwtUtil', () => {
 		it('test Azure ID Token ', async () => {
 			const decode = await jwtVerify(AZURE_ACCESS_TOKEN);
 			expect(decode).not.to.be.null;
+		});
+		after(async () => {
+			if (fs.existsSync('./unitTestCache.json')) {
+				await fs.promises.unlink('./unitTestCache.json');
+			}
 		});
 	});
 	describe('test IssuerCertLoader', () => {
