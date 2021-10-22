@@ -4,6 +4,7 @@ import * as jwt from 'jsonwebtoken';
 import {CertCache} from './cache/CertCache';
 import {ExpireCache} from './ExpireCache';
 import {IssuerCertLoader} from './issuerCertLoader';
+import { JwtHeaderError } from './JwtHeaderError';
 import {buildCertFrame} from './rsaPublicKeyPem';
 const icl = new IssuerCertLoader();
 
@@ -63,9 +64,12 @@ export const jwtVerifyPromise: JwtVerifyPromiseFunc = (token, secretOrPublicKey,
 };
 
 const getKeyIdAndSetOptions = (decoded: ITokenStructure, options: jwt.VerifyOptions | undefined) => {
-	const {kid, alg, typ} = decoded.header;
-	if (!kid || typ !== 'JWT') {
-		throw new Error('token header missing required parameters');
+	const {kid, alg, typ} = decoded.header || {};
+	if (!kid) {
+		throw new JwtHeaderError('token header: missing kid parameter');
+	}
+	if (typ !== 'JWT') {
+		throw new JwtHeaderError(`token header: type "${typ}" is not valid`);
 	}
 	if (!options) {
 		options = {};
@@ -93,7 +97,7 @@ export const jwtVerify = async <T extends object>(token: string, options?: jwt.V
 		throw new Error("Can't decode token");
 	}
 	if (!decoded.payload.iss) {
-		throw new Error('token missing required parameters');
+		throw new JwtHeaderError('token header: missing issuer parameter');
 	}
 	const certString = await icl.getCert(decoded.payload.iss, getKeyIdAndSetOptions(decoded, options));
 	const verifiedDecode = (await jwtVerifyPromise(token, buildCertFrame(certString), options)) as T & ITokenPayload;

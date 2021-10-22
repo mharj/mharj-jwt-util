@@ -13,6 +13,7 @@ import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, wasItCached, jwt
 import {Credentials} from 'google-auth-library';
 import {IssuerCertLoader} from '../src/issuerCertLoader';
 import {buildCertFrame} from '../src/rsaPublicKeyPem';
+import {JwtHeaderError} from '../src/JwtHeaderError';
 
 // tslint:disable: no-unused-expression
 chai.use(chaiAsPromised);
@@ -96,20 +97,20 @@ describe('jwtUtil', () => {
 	});
 	describe('jwtVerifyPromise', () => {
 		it('should fail internal jwtVerifyPromise with broken data', async () => {
-			expect(jwtVerifyPromise('qwe', 'qwe')).to.be.rejectedWith('jwt malformed');
+			await expect(jwtVerifyPromise('qwe', 'qwe')).to.be.eventually.rejectedWith(Error, 'jwt malformed');
 		});
 	});
 	describe('jwtVerify', () => {
 		it('should fail if broken token', async () => {
-			expect(jwtVerify('asd')).to.be.rejectedWith("Can't decode token");
+			await expect(jwtVerify('asd')).to.be.eventually.rejectedWith(Error, "Can't decode token");
 		});
 		it('should fail is issuer url is missing', async () => {
 			const test = jwt.sign({}, 'test');
-			expect(jwtVerify(test)).to.be.rejectedWith('token missing required parameters');
+			await expect(jwtVerify(test)).to.be.eventually.rejectedWith(JwtHeaderError, 'token header: missing issuer parameter');
 		});
 		it('should fail is kid is missing', async () => {
 			const test = jwt.sign({}, 'test', {issuer: 'https://accounts.google.com'});
-			expect(jwtVerify(test)).to.be.rejectedWith('token header missing required parameters');
+			await expect(jwtVerify(test)).to.be.eventually.rejectedWith(JwtHeaderError, 'token header: missing kid parameter');
 		});
 	});
 	describe('cache', () => {
