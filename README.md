@@ -14,13 +14,13 @@
 ```javascript
 // with async
 try {
-	const decoded = await jwtBearerVerify(req.headers.authorization);
+	const {body, isCached} = await jwtBearerVerify(req.headers.authorization);
 } catch (err) {
 	console.log(err);
 }
 // or Promised
 jwtBearerVerify(req.headers.authorization)
-	.then((decoded) => {
+	.then(({body, isCached}) => {
 		// do something
 	})
 	.catch((err) => {
@@ -28,14 +28,14 @@ jwtBearerVerify(req.headers.authorization)
 	});
 // or Just token
 try {
-	const decode = await jwtVerify(process.env.GOOGLE_ID_TOKEN);
+	const {body, isCached} = await jwtVerify(process.env.GOOGLE_ID_TOKEN);
 } catch (err) {
 	console.log(err);
 }
 
 // or Promised token
 jwtVerify(process.env.GOOGLE_ID_TOKEN)
-	.then((decoded) => {
+	.then(({body, isCached}) => {
 		// do something
 	})
 	.catch((err) => {
