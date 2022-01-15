@@ -4,10 +4,10 @@ import * as jwt from 'jsonwebtoken';
 import {CertCache} from './cache/CertCache';
 import {ExpireCache} from './ExpireCache';
 import {IssuerCertLoader} from './issuerCertLoader';
-import { JwtHeaderError } from './JwtHeaderError';
+import {JwtHeaderError} from './JwtHeaderError';
 import {buildCertFrame} from './rsaPublicKeyPem';
-const icl = new IssuerCertLoader();
 
+const icl = new IssuerCertLoader();
 const cache = new ExpireCache<any>();
 
 export interface ITokenPayloadCommon extends Record<string, any> {
@@ -31,11 +31,6 @@ interface ITokenStructure {
 	header: ITokenHeader;
 	payload: ITokenPayload;
 }
-
-let isCached: boolean | undefined;
-export const wasItCached = () => {
-	return isCached;
-};
 
 export function useCache(cacheFunctions: CertCache) {
 	return icl.setCache(cacheFunctions);
@@ -63,16 +58,13 @@ export const jwtVerifyPromise: JwtVerifyPromiseFunc = (token, secretOrPublicKey,
 	});
 };
 
-const getKeyIdAndSetOptions = (decoded: ITokenStructure, options: jwt.VerifyOptions | undefined) => {
+const getKeyIdAndSetOptions = (decoded: ITokenStructure, options: jwt.VerifyOptions = {}) => {
 	const {kid, alg, typ} = decoded.header || {};
 	if (!kid) {
 		throw new JwtHeaderError('token header: missing kid parameter');
 	}
 	if (typ !== 'JWT') {
 		throw new JwtHeaderError(`token header: type "${typ}" is not valid`);
-	}
-	if (!options) {
-		options = {};
 	}
 	if (alg) {
 		options.algorithms = [alg];
@@ -81,17 +73,21 @@ const getKeyIdAndSetOptions = (decoded: ITokenStructure, options: jwt.VerifyOpti
 };
 
 /**
+ * Response have decoded body and information if was already verified and returned from cache
+ */
+export type JwtResponse<T extends object> = {body: T & ITokenPayload; isCached: boolean};
+/**
  * Verify JWT token against issuer public certs
  * @param token jwt token
  * @param allowedIssuers optional issuer validation
  */
-export const jwtVerify = async <T extends object>(token: string, options?: jwt.VerifyOptions | undefined): Promise<T & ITokenPayload> => {
+export const jwtVerify = async <T extends object>(token: string, options: jwt.VerifyOptions = {}): Promise<JwtResponse<T>> => {
+	let isCached= false;
 	const cached = cache.get(token);
 	if (cached) {
 		isCached = true;
-		return cached;
+		return {body: cached, isCached};
 	}
-	isCached = false;
 	const decoded = jwt.decode(token, {complete: true}) as ITokenStructure;
 	if (!decoded) {
 		throw new Error("Can't decode token");
@@ -104,7 +100,7 @@ export const jwtVerify = async <T extends object>(token: string, options?: jwt.V
 	if (verifiedDecode.exp) {
 		cache.put(token, verifiedDecode, verifiedDecode.exp * 1000);
 	}
-	return verifiedDecode;
+	return {body: verifiedDecode, isCached};
 };
 
 /**
@@ -112,7 +108,7 @@ export const jwtVerify = async <T extends object>(token: string, options?: jwt.V
  * @param authHeader raw authentication header with ^Bearer prefix
  * @param allowedIssuers optional issuer validation
  */
-export const jwtBearerVerify = <T extends object>(authHeader: string, options?: jwt.VerifyOptions | undefined): Promise<ITokenPayload & T> => {
+export const jwtBearerVerify = <T extends object>(authHeader: string, options: jwt.VerifyOptions = {}): Promise<JwtResponse<T>> => {
 	const match = authHeader.match(/^Bearer (.*?)$/);
 	if (!match) {
 		throw new Error('No authentication header');

@@ -9,7 +9,7 @@ import 'cross-fetch/polyfill';
 import {google} from 'googleapis';
 import * as jwt from 'jsonwebtoken';
 import 'mocha';
-import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, wasItCached, jwtVerifyPromise, jwtHaveIssuer, useCache, FileCertCache} from '../src';
+import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, jwtVerifyPromise, jwtHaveIssuer, useCache, FileCertCache} from '../src';
 import {Credentials} from 'google-auth-library';
 import {IssuerCertLoader} from '../src/issuerCertLoader';
 import {buildCertFrame} from '../src/rsaPublicKeyPem';
@@ -131,25 +131,26 @@ describe('jwtUtil', () => {
 		});
 		it('Test Google IdToken', async () => {
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
-			const decode = await jwtVerify(GOOGLE_ID_TOKEN as string);
-			expect(decode).not.to.be.null;
-			expect(wasItCached()).to.be.eq(false);
+			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string);
+			expect(body).not.to.be.null;
+			expect(isCached).to.be.eq(false);
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(true);
 		});
 		it('Test Google IdToken cached', async () => {
-			const decode = await jwtVerify(GOOGLE_ID_TOKEN as string);
-			expect(decode).not.to.be.null;
-			expect(wasItCached()).to.be.eq(true);
+			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string);
+			expect(body).not.to.be.null;
+			expect(isCached).to.be.eq(true);
 		});
 		it('Test Google token as Bearer Token', async () => {
-			const decode = await jwtBearerVerify<{test?: string}>('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
-			expect(decode).not.to.be.undefined;
-			expect(decode.aud).not.to.be.undefined;
-			expect(decode.exp).not.to.be.undefined;
-			expect(decode.iat).not.to.be.undefined;
-			expect(decode.iss).not.to.be.undefined;
-			expect(decode.sub).not.to.be.undefined;
-			expect(decode.test).to.be.undefined;
+			const {body, isCached} = await jwtBearerVerify<{test?: string}>('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
+			expect(body).not.to.be.undefined;
+			expect(body.aud).not.to.be.undefined;
+			expect(body.exp).not.to.be.undefined;
+			expect(body.iat).not.to.be.undefined;
+			expect(body.iss).not.to.be.undefined;
+			expect(body.sub).not.to.be.undefined;
+			expect(body.test).to.be.undefined;
+			expect(isCached).to.be.eq(true);
 		});
 		it('Test non Bearer auth', async () => {
 			try {

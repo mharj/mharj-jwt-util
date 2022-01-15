@@ -1,7 +1,5 @@
 export class ExpireCache<T extends object> {
-	private cache: {
-		[key: string]: {data: T; expires: number};
-	} = {};
+	private cache: Record<string, {data: T, expires: number}> = {};
 	public put(key: string, data: T, expires: number) {
 		this.cache[key] = {data, expires};
 	}
