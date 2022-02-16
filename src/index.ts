@@ -1,6 +1,8 @@
 export {setJwtLogger} from './logger';
 export {FileCertCache} from './cache/FileCertCache';
+export {AuthHeader, getTokenOrAuthHeader, getAuthType, isAuthType} from './AuthHeader';
 import * as jwt from 'jsonwebtoken';
+import {AuthHeader, getTokenOrAuthHeader} from './AuthHeader';
 import {CertCache} from './cache/CertCache';
 import {ExpireCache} from './ExpireCache';
 import {IssuerCertLoader} from './issuerCertLoader';
@@ -78,11 +80,20 @@ const getKeyIdAndSetOptions = (decoded: ITokenStructure, options: jwt.VerifyOpti
 export type JwtResponse<T extends object> = {body: T & ITokenPayload; isCached: boolean};
 /**
  * Verify JWT token against issuer public certs
- * @param token jwt token
- * @param allowedIssuers optional issuer validation
+ * @param tokenOrBearer jwt token or Bearer string with jwt token
+ * @param options jwt verify options
  */
-export const jwtVerify = async <T extends object>(token: string, options: jwt.VerifyOptions = {}): Promise<JwtResponse<T>> => {
-	let isCached= false;
+export const jwtVerify = async <T extends object>(tokenOrBearer: string, options: jwt.VerifyOptions = {}): Promise<JwtResponse<T>> => {
+	if (typeof tokenOrBearer !== 'string') {
+		throw new JwtHeaderError('token header: token is not a string');
+	}
+	const currentToken = getTokenOrAuthHeader(tokenOrBearer);
+	// only allow bearer as auth type
+	if (currentToken instanceof AuthHeader && currentToken.type !== 'BEARER') {
+		throw new JwtHeaderError('token header: wrong authentication header type');
+	}
+	const token = currentToken instanceof AuthHeader ? currentToken.credentials : currentToken;
+	let isCached = false;
 	const cached = cache.get(token);
 	if (cached) {
 		isCached = true;
@@ -90,7 +101,7 @@ export const jwtVerify = async <T extends object>(token: string, options: jwt.Ve
 	}
 	const decoded = jwt.decode(token, {complete: true}) as ITokenStructure;
 	if (!decoded) {
-		throw new Error("Can't decode token");
+		throw new JwtHeaderError("token header: Can't decode token");
 	}
 	if (!decoded.payload.iss) {
 		throw new JwtHeaderError('token header: missing issuer parameter');
@@ -106,7 +117,7 @@ export const jwtVerify = async <T extends object>(token: string, options: jwt.Ve
 /**
  * Verify auth "Bearer" header against issuer public certs
  * @param authHeader raw authentication header with ^Bearer prefix
- * @param allowedIssuers optional issuer validation
+ * @param options jwt verify options
  */
 export const jwtBearerVerify = <T extends object>(authHeader: string, options: jwt.VerifyOptions = {}): Promise<JwtResponse<T>> => {
 	const match = authHeader.match(/^Bearer (.*?)$/);

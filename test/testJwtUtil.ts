@@ -112,6 +112,10 @@ describe('jwtUtil', () => {
 			const test = jwt.sign({}, 'test', {issuer: 'https://accounts.google.com'});
 			await expect(jwtVerify(test)).to.be.eventually.rejectedWith(JwtHeaderError, 'token header: missing kid parameter');
 		});
+		it('should fail if auth type is not Bearer', async () => {
+			const test = jwt.sign({}, 'test', {issuer: 'https://accounts.google.com'});
+			await expect(jwtVerify(`Basic ${test}`)).to.be.eventually.rejectedWith(JwtHeaderError, 'token header: wrong authentication header type');
+		});
 	});
 	describe('cache', () => {
 		it('Test expire cache', () => {
@@ -185,7 +189,7 @@ describe('jwtUtil', () => {
 			expect(decode).not.to.be.null;
 		});
 		it('test Azure ID Token ', async () => {
-			const decode = await jwtVerify(AZURE_ACCESS_TOKEN);
+			const decode = await jwtVerify(`Bearer ${AZURE_ACCESS_TOKEN}`);
 			expect(decode).not.to.be.null;
 		});
 		after(async () => {
