@@ -106,6 +106,13 @@ export const jwtVerify = async <T extends object>(tokenOrBearer: string, options
 	if (!decoded.payload.iss) {
 		throw new JwtHeaderError('token header: missing issuer parameter');
 	}
+	if (options.issuer) {
+		// prevent loading rogue issuers data if not valid issuer
+		const allowedIssuers = Array.isArray(options.issuer) ? options.issuer : [options.issuer];
+		if (!allowedIssuers.includes(decoded.payload.iss)) {
+			throw new JwtHeaderError('token header: issuer is not valid');
+		}
+	}
 	const certString = await icl.getCert(decoded.payload.iss, getKeyIdAndSetOptions(decoded, options));
 	const verifiedDecode = (await jwtVerifyPromise(token, buildCertFrame(certString), options)) as T & ITokenPayload;
 	if (verifiedDecode.exp) {

@@ -116,6 +116,11 @@ describe('jwtUtil', () => {
 			const test = jwt.sign({}, 'test', {issuer: 'https://accounts.google.com'});
 			await expect(jwtVerify(`Basic ${test}`)).to.be.eventually.rejectedWith(JwtHeaderError, 'token header: wrong authentication header type');
 		});
+		it('should not load issuer certs if not allowed', async () => {
+			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
+			await expect(jwtVerify(GOOGLE_ID_TOKEN, {issuer: []})).to.be.eventually.rejectedWith(JwtHeaderError, 'token header: issuer is not valid');
+			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
+		});
 	});
 	describe('cache', () => {
 		it('Test expire cache', () => {
@@ -135,7 +140,7 @@ describe('jwtUtil', () => {
 		});
 		it('Test Google IdToken', async () => {
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
-			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string);
+			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string, {issuer: ['https://accounts.google.com']});
 			expect(body).not.to.be.null;
 			expect(isCached).to.be.eq(false);
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(true);
