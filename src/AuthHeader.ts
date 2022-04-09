@@ -1,3 +1,5 @@
+import {JwtHeaderError} from './JwtHeaderError';
+
 const authTypes = ['BEARER', 'BASIC', 'DIGEST', 'HOBA', 'MUTUAL', 'NEGOTIATE', 'NTLM', 'VAPID', 'AWS4-HMAC-SHA256'] as const;
 export type AuthType = typeof authTypes[number];
 
@@ -29,7 +31,10 @@ export function getAuthType(data: unknown): AuthType {
 /**
  * return AuthHeader instance or string
  */
-export function getTokenOrAuthHeader(data: string): string | AuthHeader {
+export function getTokenOrAuthHeader(data: unknown): string | AuthHeader {
+	if (typeof data !== 'string') {
+		throw new JwtHeaderError('token header: token is not a string');
+	}
 	return AuthHeader.isAuthHeader(data) ? AuthHeader.fromString(data) : data;
 }
 

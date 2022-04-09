@@ -207,7 +207,8 @@ describe('jwtUtil', () => {
 		before(async () => {
 			icl = new IssuerCertLoader();
 		});
-		it('should throw if issuer is not found (hostname error)', async () => {
+		it('should throw if issuer is not found (hostname error)', async function () {
+			this.timeout(10000);
 			await expect(icl.getCert('https://123qweasdqwe123zzz/uuaaakkk/', 'unknown')).to.be.rejected;
 		});
 		it('should throw if issuer is not found (json error)', async () => {
