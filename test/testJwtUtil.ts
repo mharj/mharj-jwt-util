@@ -138,7 +138,8 @@ describe('jwtUtil', () => {
 			}
 			await useCache(new FileCertCache({fileName: './unitTestCache.json', pretty: true}));
 		});
-		it('Test Google IdToken', async () => {
+		it('Test Google IdToken', async function () {
+			this.slow(100);
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string, {issuer: ['https://accounts.google.com']});
 			expect(body).not.to.be.null;
@@ -149,6 +150,12 @@ describe('jwtUtil', () => {
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string);
 			expect(body).not.to.be.null;
 			expect(isCached).to.be.eq(true);
+		});
+		it('Test jwt cache speed (jwt 100 times)', async function () {
+			this.slow(5);
+			for (let i = 0; i < 100; i++) {
+				await jwtVerify(GOOGLE_ID_TOKEN as string);
+			}
 		});
 		it('Test Google token as Bearer Token', async () => {
 			const {body, isCached} = await jwtBearerVerify<{test?: string}>('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
@@ -193,7 +200,8 @@ describe('jwtUtil', () => {
 			const decode = await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
 			expect(decode).not.to.be.null;
 		});
-		it('test Azure ID Token ', async () => {
+		it('test Azure ID Token ', async function () {
+			this.slow(500);
 			const decode = await jwtVerify(`Bearer ${AZURE_ACCESS_TOKEN}`);
 			expect(decode).not.to.be.null;
 		});
