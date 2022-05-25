@@ -3,7 +3,6 @@ import {LoggerLike} from './interfaces/loggerLike';
 // tslint:disable: no-empty
 const dummyLogger: LoggerLike = {
 	debug: () => {},
-	trace: () => {},
 	info: () => {},
 	warn: () => {},
 	error: () => {},
