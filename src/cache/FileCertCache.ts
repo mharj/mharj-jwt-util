@@ -1,7 +1,7 @@
 import * as fs from 'fs';
-import {logger} from '../logger';
 import {CertCache} from './CertCache';
 import {CertRecords} from '../issuerCertLoader';
+import {logger} from '../logger';
 
 interface IProps {
 	fileName?: string;
@@ -23,6 +23,7 @@ export class FileCertCache extends CertCache {
 		this.file = fileName || './certCache.json';
 		this.pretty = pretty || false;
 	}
+
 	protected async init(): Promise<void> {
 		logger().debug(`jwt-util FileCertCache:init()`);
 		// write empty record file if file not exists
@@ -38,6 +39,7 @@ export class FileCertCache extends CertCache {
 			}
 		});
 	}
+
 	protected async load(): Promise<CertRecords> {
 		logger().debug(`jwt-util FileCertCache:load()`);
 		if (!fs.existsSync(this.file)) {
@@ -49,6 +51,7 @@ export class FileCertCache extends CertCache {
 			return initialCerts;
 		}
 	}
+
 	protected save(certs: CertRecords): Promise<void> {
 		logger().debug(`jwt-util FileCertCache:save()`);
 		return fs.promises.writeFile(this.file, JSON.stringify(certs, undefined, this.pretty ? 2 : undefined));

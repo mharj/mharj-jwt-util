@@ -1,13 +1,10 @@
 import 'cross-fetch/polyfill';
-import {posix as path} from 'path';
-import {URL} from 'url';
 import {CertCache} from './cache/CertCache';
+import {ExpireCache} from '@avanio/expire-cache';
 import {logger} from './logger';
+import {posix as path} from 'path';
 import {rsaPublicKeyPem} from './rsaPublicKeyPem';
-export interface CertRecords {
-	_ts: number;
-	certs: Record<string, ICertItem[] | undefined>;
-}
+import {URL} from 'url';
 
 interface ICertItem {
 	alg?: string;
@@ -20,21 +17,28 @@ interface ICertItem {
 	x5c?: string[];
 	issuer?: string;
 }
+
+type IssuerUrl = string;
+
+export interface CertRecords {
+	_ts: number;
+	certs: Record<IssuerUrl, ICertItem[] | undefined>;
+}
+
 interface IOpenIdConfig {
 	jwks_uri: string;
 }
-interface IOpenIdConfigCache extends IOpenIdConfig {
-	expires: number;
-}
+
 interface ICertList {
 	keys: ICertItem[];
 }
-const configCache: {[key: string]: IOpenIdConfigCache} = {};
 
 export class IssuerCertLoader {
 	private store: CertRecords = {_ts: 0, certs: {}};
 	private cache: CertCache | undefined;
 	private cacheLoaded = false;
+	private configCache = new ExpireCache<IOpenIdConfig>();
+
 	public async setCache(cache: CertCache) {
 		this.cache = cache;
 		await this.cache.handleInit();
@@ -68,8 +72,8 @@ export class IssuerCertLoader {
 		return false;
 	}
 
-	public haveIssuer(issuerUrl: string) {
-		return this.store.certs[issuerUrl] ? true : false;
+	public haveIssuer(issuerUrl: string): boolean {
+		return Boolean(this.store.certs[issuerUrl]);
 	}
 
 	private async getIssuerCert(certList: ICertItem[], issuerUrl: string, kid: string) {
@@ -86,7 +90,7 @@ export class IssuerCertLoader {
 		return cert;
 	}
 
-	private async getIssuerCerts(issuerUrl: string) {
+	private async getIssuerCerts(issuerUrl: string): Promise<ICertItem[]> {
 		let issuer = this.store.certs[issuerUrl];
 		if (!issuer) {
 			issuer = await this.pullIssuerCerts(issuerUrl);
@@ -117,14 +121,14 @@ export class IssuerCertLoader {
 		return Object.values(this.store.certs).reduce((last, current) => last + (current?.length || 0), 0);
 	}
 
-	private buildCert(cert: ICertItem): Promise<Buffer | string> {
+	private buildCert(cert: ICertItem): Buffer {
 		/* istanbul ignore else if  */
 		if (cert.n && cert.e) {
-			// we have modulo and exponent, build PEM
+			// we have modulo and exponent, build PEM to cert.x5c
 			cert.x5c = [rsaPublicKeyPem(cert.n, cert.e)];
-			return Promise.resolve(Buffer.from(cert.x5c[0]));
-		} else if (cert.x5c) {
-			return Promise.resolve(Buffer.from(cert.x5c[0]));
+		}
+		if (cert.x5c) {
+			return Buffer.from(cert.x5c[0]);
 		} else {
 			throw new Error('no cert found');
 		}
@@ -137,22 +141,24 @@ export class IssuerCertLoader {
 		return fetch(req).then((resp) => this.isValidResp(resp).json());
 	}
 
-	private getConfiguration(issuerUrl: string): Promise<IOpenIdConfig> {
-		logger().debug(`jwt-util get JWT Configuration ${issuerUrl}`);
-		const now = new Date().getDate();
-		if (configCache[issuerUrl] && now < configCache[issuerUrl].expires) {
-			return Promise.resolve(configCache[issuerUrl]);
+	private async getConfiguration(issuerUrl: string): Promise<IOpenIdConfig> {
+		const currentConfig = this.configCache.get(issuerUrl);
+		if (currentConfig) {
+			return currentConfig;
 		} else {
-			const issuerObj = new URL(issuerUrl);
-			issuerObj.pathname = path.join(issuerObj.pathname, '/.well-known/openid-configuration');
-			const req = new Request(issuerObj.toString());
-			return fetch(req)
-				.then((resp) => this.isValidResp(resp).json())
-				.then((config: IOpenIdConfig) => {
-					configCache[issuerUrl] = {...config, expires: now + 86400000} as IOpenIdConfigCache; // cache config 24h
-					return Promise.resolve(config);
-				});
+			const config = await this.fetchOpenIdConfig(issuerUrl);
+			this.configCache.set(issuerUrl, config, new Date(Date.now() + 86400000)); // cache config 24h
+			return config;
 		}
+	}
+
+	private async fetchOpenIdConfig(issuerUrl: string): Promise<IOpenIdConfig> {
+		const issuerObj = new URL(issuerUrl);
+		issuerObj.pathname = path.join(issuerObj.pathname, '/.well-known/openid-configuration');
+		logger().debug(`jwt-util get JWT Configuration ${issuerObj.toString()}`);
+		const req = new Request(issuerObj.toString());
+		const res = await fetch(req);
+		return this.isValidResp(res).json();
 	}
 
 	private isValidResp(resp: Response): Response {

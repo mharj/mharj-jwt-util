@@ -1,7 +1,7 @@
 import {JwtHeaderError} from './JwtHeaderError';
 
 const authTypes = ['BEARER', 'BASIC', 'DIGEST', 'HOBA', 'MUTUAL', 'NEGOTIATE', 'NTLM', 'VAPID', 'AWS4-HMAC-SHA256'] as const;
-export type AuthType = typeof authTypes[number];
+export type AuthType = (typeof authTypes)[number];
 
 /**
  * AuthType type verify
@@ -50,9 +50,11 @@ export class AuthHeader {
 		const [type] = auth.split(' ', 2);
 		return isAuthType(type);
 	}
+
 	public static fromString(auth: string): AuthHeader {
 		return new AuthHeader(auth);
 	}
+
 	private constructor(auth: string) {
 		const [type, credentials] = auth.split(' ', 2);
 		if (!isAuthType(type)) {

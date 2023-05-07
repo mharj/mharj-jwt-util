@@ -25,8 +25,7 @@ export const rsaPublicKeyPem = (modulusB64: string, exponentB64: string) => {
 		encodedExplen +
 		exponentHex;
 
-	const derB64 = Buffer.from(encodedPubkey, 'hex').toString('base64');
-	return derB64;
+	return Buffer.from(encodedPubkey, 'hex').toString('base64');
 };
 
 export const buildCertFrame = (der: string | Buffer): Buffer | string => {

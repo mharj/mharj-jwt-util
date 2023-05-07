@@ -1,19 +1,19 @@
-import {LoggerLike} from './interfaces/loggerLike';
+/* eslint-disable sort-keys, @typescript-eslint/no-empty-function */
+import type {ILoggerLike} from '@avanio/logger-like';
 
-// tslint:disable: no-empty
-const dummyLogger: LoggerLike = {
+const dummyLogger: ILoggerLike = {
 	debug: () => {},
 	info: () => {},
 	warn: () => {},
 	error: () => {},
 };
 
-let loggerFunction: LoggerLike = dummyLogger;
+let loggerFunction: ILoggerLike = dummyLogger;
 
-export function setJwtLogger(newLogger: LoggerLike) {
+export function setJwtLogger(newLogger: ILoggerLike) {
 	loggerFunction = newLogger;
 }
 
-export function logger(): LoggerLike {
+export function logger(): ILoggerLike {
 	return loggerFunction;
 }

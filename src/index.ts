@@ -1,17 +1,17 @@
+import * as jwt from 'jsonwebtoken';
+import {AuthHeader, getTokenOrAuthHeader} from './AuthHeader';
+import {FullDecodedIssuerTokenStructure, FullDecodedTokenStructure, isIssuerToken, isTokenFullDecoded, TokenPayload} from './interfaces/token';
+import {buildCertFrame} from './rsaPublicKeyPem';
+import {CertCache} from './cache/CertCache';
+import {ExpireCache} from '@avanio/expire-cache';
+import {IssuerCertLoader} from './issuerCertLoader';
+import {JwtHeaderError} from './JwtHeaderError';
 export {setJwtLogger} from './logger';
 export {FileCertCache} from './cache/FileCertCache';
 export {AuthHeader, getTokenOrAuthHeader, getAuthType, isAuthType} from './AuthHeader';
-import * as jwt from 'jsonwebtoken';
-import {AuthHeader, getTokenOrAuthHeader} from './AuthHeader';
-import {CertCache} from './cache/CertCache';
-import {ExpireCache} from './ExpireCache';
-import {FullDecodedIssuerTokenStructure, isIssuerToken, isTokenFullDecoded, TokenPayload, FullDecodedTokenStructure} from './interfaces/token';
-import {IssuerCertLoader} from './issuerCertLoader';
-import {JwtHeaderError} from './JwtHeaderError';
-import {buildCertFrame} from './rsaPublicKeyPem';
 
 const icl = new IssuerCertLoader();
-const cache = new ExpireCache<any>();
+const cache = new ExpireCache<TokenPayload>();
 
 export function useCache(cacheFunctions: CertCache) {
 	return icl.setCache(cacheFunctions);
@@ -26,7 +26,7 @@ export const testGetCache = () => {
 	}
 };
 
-type JwtVerifyPromiseFunc<T = Record<string, any>> = (...params: Parameters<typeof jwt.verify>) => Promise<TokenPayload<T> | undefined>;
+type JwtVerifyPromiseFunc<T = Record<string, unknown>> = (...params: Parameters<typeof jwt.verify>) => Promise<TokenPayload<T> | undefined>;
 export const jwtVerifyPromise: JwtVerifyPromiseFunc = (token, secretOrPublicKey, options?) => {
 	return new Promise<TokenPayload | undefined>((resolve, reject) => {
 		jwt.verify(token, secretOrPublicKey, options, (err: jwt.VerifyErrors | null, decoded: object | undefined) => {
@@ -94,13 +94,13 @@ export const jwtVerify = async <T extends object>(tokenOrBearer: string, options
 	const token = currentToken instanceof AuthHeader ? currentToken.credentials : currentToken;
 	const cached = cache.get(token);
 	if (cached) {
-		return {body: cached, isCached: true};
+		return {body: cached as TokenPayload & T, isCached: true};
 	}
 	const decoded = haveValidIssuer(jwt.decode(token, {complete: true}), options);
 	const certString = await icl.getCert(decoded.payload.iss, getKeyIdAndSetOptions(decoded, options));
 	const verifiedDecode = (await jwtVerifyPromise(token, buildCertFrame(certString), options)) as T & TokenPayload;
 	if (verifiedDecode.exp) {
-		cache.put(token, verifiedDecode, verifiedDecode.exp * 1000);
+		cache.set(token, verifiedDecode, new Date(verifiedDecode.exp * 1000));
 	}
 	return {body: verifiedDecode, isCached: false};
 };

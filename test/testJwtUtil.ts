@@ -1,20 +1,22 @@
-import * as dotenv from 'dotenv';
-import * as fs from 'fs';
-dotenv.config();
+/* eslint-disable import/first, no-unused-expressions, sonarjs/no-duplicate-string */
 process.env.NODE_ENV = 'testing';
-import {expect} from 'chai';
+import 'mocha';
+import 'cross-fetch/polyfill';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
-import 'cross-fetch/polyfill';
-import {google} from 'googleapis';
+import * as dotenv from 'dotenv';
+import * as fs from 'fs';
 import * as jwt from 'jsonwebtoken';
-import 'mocha';
-import {jwtBearerVerify, jwtDeleteKid, jwtVerify, testGetCache, jwtVerifyPromise, jwtHaveIssuer, useCache, FileCertCache} from '../src';
-import {Credentials} from 'google-auth-library';
-import {IssuerCertLoader} from '../src/issuerCertLoader';
+import {FileCertCache, jwtBearerVerify, jwtDeleteKid, jwtHaveIssuer, jwtVerify, jwtVerifyPromise, useCache} from '../src';
 import {buildCertFrame} from '../src/rsaPublicKeyPem';
+import {Credentials} from 'google-auth-library';
+import {google} from 'googleapis';
+import {IssuerCertLoader} from '../src/issuerCertLoader';
 import {JwtHeaderError} from '../src/JwtHeaderError';
 
+dotenv.config();
+
+const expect = chai.expect;
 // tslint:disable: no-unused-expression
 chai.use(chaiAsPromised);
 
@@ -29,28 +31,17 @@ function azureMultilineEnvFix(input: string | undefined) {
 	return input.replace(/\\n/g, '\n');
 }
 
-function getAccessToken(): Promise<string> {
+async function getGoogleCredentials(): Promise<Credentials> {
 	const clientKey = azureMultilineEnvFix(process.env.GOOGLE_CLIENT_KEY);
-	return new Promise((resolve, reject) => {
-		const jwtClient = new google.auth.JWT(
-			process.env.GOOGLE_CLIENT_EMAIL,
-			undefined,
-			clientKey,
-			['openid', 'https://www.googleapis.com/auth/cloud-platform'],
-			undefined,
-		);
-		jwtClient.authorize((err: Error, cred: Credentials) => {
-			if (err) {
-				reject(err);
-				return;
-			}
-			if (!cred || !cred.access_token) {
-				reject(new Error('no access token'));
-			} else {
-				resolve(cred.access_token);
-			}
-		});
-	});
+
+	const jwtClient = new google.auth.JWT(
+		process.env.GOOGLE_CLIENT_EMAIL,
+		undefined,
+		clientKey,
+		['openid', 'https://www.googleapis.com/auth/cloud-platform'],
+		undefined,
+	);
+	return jwtClient.authorize();
 }
 
 const getGoogleIdToken = async () => {
@@ -60,7 +51,7 @@ const getGoogleIdToken = async () => {
 		includeEmail: true,
 	});
 	const headers = new Headers();
-	headers.set('Authorization', 'Bearer ' + (await getAccessToken()));
+	headers.set('Authorization', 'Bearer ' + (await getGoogleCredentials()).access_token);
 	headers.set('Content-Type', 'application/json');
 	headers.set('Content-Length', '' + body.length);
 	const res = await fetch(`https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${process.env.GOOGLE_CLIENT_EMAIL}:generateIdToken`, {
@@ -120,15 +111,6 @@ describe('jwtUtil', () => {
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
 			await expect(jwtVerify(GOOGLE_ID_TOKEN, {issuer: []})).to.be.eventually.rejectedWith(JwtHeaderError, 'token header: issuer is not valid');
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
-		});
-	});
-	describe('cache', () => {
-		it('Test expire cache', () => {
-			const cache = testGetCache();
-			cache.put('test', {none: 'test'}, 0);
-			expect(cache.getCacheSize()).to.be.eq(1);
-			expect(cache.get('test')).to.be.eq(undefined); // shoud remove test as it's expired
-			expect(cache.getCacheSize()).to.be.eq(0);
 		});
 	});
 	describe('tokens', () => {
