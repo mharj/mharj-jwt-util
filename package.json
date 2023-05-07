@@ -6,7 +6,8 @@
     "scripts": {
         "build": "tsc",
         "mocha": "mocha",
-        "prepublishOnly": "npm run build",
+        "test-all": "npm run lint && npm run mocha",
+        "prepublishOnly": "npm run test-all && npm run build",
         "test": "nyc mocha",
         "azure-test": "nyc mocha",
         "lint": "eslint src"
