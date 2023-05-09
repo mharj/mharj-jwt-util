@@ -4,14 +4,18 @@ import {FullDecodedIssuerTokenStructure, FullDecodedTokenStructure, isIssuerToke
 import {buildCertFrame} from './rsaPublicKeyPem';
 import {CertCache} from './cache/CertCache';
 import {ExpireCache} from '@avanio/expire-cache';
+import {ILoggerLike} from '@avanio/logger-like';
 import {IssuerCertLoader} from './issuerCertLoader';
 import {JwtHeaderError} from './JwtHeaderError';
-export {setJwtLogger} from './logger';
 export {FileCertCache} from './cache/FileCertCache';
 export {AuthHeader, getTokenOrAuthHeader, getAuthType, isAuthType} from './AuthHeader';
 
 const icl = new IssuerCertLoader();
 const cache = new ExpireCache<TokenPayload>();
+
+export function setJwtLogger(logger: ILoggerLike) {
+	icl.setLogger(logger);
+}
 
 export function useCache(cacheFunctions: CertCache) {
 	return icl.setCache(cacheFunctions);

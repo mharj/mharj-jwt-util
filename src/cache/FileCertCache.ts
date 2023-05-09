@@ -1,7 +1,7 @@
 import * as fs from 'fs';
+import {ILoggerLike, ISetOptionalLogger} from '@avanio/logger-like';
 import {CertCache} from './CertCache';
 import {CertRecords} from '../issuerCertLoader';
-import {logger} from '../logger';
 
 interface IProps {
 	fileName?: string;
@@ -13,19 +13,25 @@ const initialCerts: CertRecords = {
 	certs: {},
 };
 
-export class FileCertCache extends CertCache {
+export class FileCertCache extends CertCache implements ISetOptionalLogger {
 	private file: string;
 	private pretty: boolean;
+	private logger: ILoggerLike | undefined;
 
-	constructor({fileName, pretty}: IProps = {}) {
+	constructor({fileName, pretty}: IProps = {}, logger?: ILoggerLike) {
 		super();
-		logger().info(`jwt-util FileCertCache registered`);
+		this.logger = logger;
+		this.logger?.info(`jwt-util FileCertCache registered`);
 		this.file = fileName || './certCache.json';
 		this.pretty = pretty || false;
 	}
 
+	public setLogger(logger: ILoggerLike | undefined) {
+		this.logger = logger;
+	}
+
 	protected async init(): Promise<void> {
-		logger().debug(`jwt-util FileCertCache:init()`);
+		this.logger?.debug(`jwt-util FileCertCache:init()`);
 		// write empty record file if file not exists
 		if (!fs.existsSync(this.file)) {
 			await fs.promises.writeFile(this.file, JSON.stringify(initialCerts, undefined, this.pretty ? 2 : undefined));
@@ -33,7 +39,7 @@ export class FileCertCache extends CertCache {
 		// watch file changes
 		fs.watch(this.file, async (eventType) => {
 			if (this.updateCallback && eventType === 'change') {
-				logger().debug(`jwt-util FileCertCache:watch ()=> change`);
+				this.logger?.debug(`jwt-util FileCertCache:watch ()=> change`);
 				const data = JSON.parse((await fs.promises.readFile(this.file)).toString()) as CertRecords;
 				this.handleUpdate(data);
 			}
@@ -41,7 +47,7 @@ export class FileCertCache extends CertCache {
 	}
 
 	protected async load(): Promise<CertRecords> {
-		logger().debug(`jwt-util FileCertCache:load()`);
+		this.logger?.debug(`jwt-util FileCertCache:load()`);
 		if (!fs.existsSync(this.file)) {
 			return initialCerts;
 		}
@@ -53,7 +59,7 @@ export class FileCertCache extends CertCache {
 	}
 
 	protected save(certs: CertRecords): Promise<void> {
-		logger().debug(`jwt-util FileCertCache:save()`);
+		this.logger?.debug(`jwt-util FileCertCache:save()`);
 		return fs.promises.writeFile(this.file, JSON.stringify(certs, undefined, this.pretty ? 2 : undefined));
 	}
 }

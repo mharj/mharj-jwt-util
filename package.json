@@ -91,8 +91,8 @@
         "typescript": "^5.0.4"
     },
     "dependencies": {
-        "@avanio/expire-cache": "^0.0.3",
-        "@avanio/logger-like": "^0.0.4",
+        "@avanio/expire-cache": "^0.0.7",
+        "@avanio/logger-like": "^0.1.0",
         "cross-fetch": "^3.1.5",
         "jsonwebtoken": "^9.0.0"
     }

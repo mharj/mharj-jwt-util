@@ -1,7 +1,7 @@
 import 'cross-fetch/polyfill';
+import {ExpireCache, ExpireCacheLogMapType} from '@avanio/expire-cache';
+import {ILoggerLike, ISetOptionalLogger} from '@avanio/logger-like';
 import {CertCache} from './cache/CertCache';
-import {ExpireCache} from '@avanio/expire-cache';
-import {logger} from './logger';
 import {posix as path} from 'path';
 import {rsaPublicKeyPem} from './rsaPublicKeyPem';
 import {URL} from 'url';
@@ -33,17 +33,35 @@ interface ICertList {
 	keys: ICertItem[];
 }
 
-export class IssuerCertLoader {
+export type IssuerCertLoaderOptions = {
+	/**
+	 * Log mapping for ExpireCache (optional)
+	 */
+	expireCacheLogMap?: Partial<ExpireCacheLogMapType>;
+};
+
+export class IssuerCertLoader implements ISetOptionalLogger {
 	private store: CertRecords = {_ts: 0, certs: {}};
 	private cache: CertCache | undefined;
 	private cacheLoaded = false;
-	private configCache = new ExpireCache<IOpenIdConfig>();
+	private configCache: ExpireCache<IOpenIdConfig>;
+	private logger: ILoggerLike | undefined;
+
+	constructor(logger?: ILoggerLike, {expireCacheLogMap}: IssuerCertLoaderOptions = {}) {
+		this.logger = logger;
+		this.configCache = new ExpireCache<IOpenIdConfig>(this.logger, expireCacheLogMap, 86400000); // default OpenId config cache for 24 hours
+	}
+
+	public setLogger(logger: ILoggerLike | undefined) {
+		this.logger = logger;
+		this.configCache.setLogger(logger);
+	}
 
 	public async setCache(cache: CertCache) {
 		this.cache = cache;
 		await this.cache.handleInit();
 		this.cache.registerChangeCallback((certs) => {
-			logger().debug(`jwt-util handleUpdate ${this.countCerts()} certificates`);
+			this.logger?.debug(`jwt-util handleUpdate ${this.countCerts()} certificates`);
 			this.store = certs;
 			this.cacheLoaded = true;
 		});
@@ -52,7 +70,7 @@ export class IssuerCertLoader {
 	public async getCert(issuerUrl: string, kid: string): Promise<Buffer | string> {
 		if (!this.cacheLoaded && this.cache) {
 			this.store = await this.cache.handleLoad();
-			logger().debug(`jwt-util cacheLoaded ${this.countCerts()} certificates`);
+			this.logger?.debug(`jwt-util cacheLoaded ${this.countCerts()} certificates`);
 			this.cacheLoaded = true;
 		}
 		const certList = await this.getIssuerCerts(issuerUrl);
@@ -112,7 +130,7 @@ export class IssuerCertLoader {
 	private async saveCerts() {
 		this.store._ts = new Date().getTime(); // update timestamp
 		if (this.cache) {
-			logger().debug(`jwt-util cacheSaved ${this.countCerts()} certificates`);
+			this.logger?.debug(`jwt-util cacheSaved ${this.countCerts()} certificates`);
 			await this.cache.handleSave(this.store);
 		}
 	}
@@ -135,7 +153,7 @@ export class IssuerCertLoader {
 	}
 
 	private async getCertList(issuerUrl: string): Promise<ICertList> {
-		logger().debug(`jwt-util getCertList ${issuerUrl}`);
+		this.logger?.debug(`jwt-util getCertList ${issuerUrl}`);
 		const config = await this.getConfiguration(issuerUrl);
 		const req = new Request(config.jwks_uri);
 		return fetch(req).then((resp) => this.isValidResp(resp).json());
@@ -155,7 +173,7 @@ export class IssuerCertLoader {
 	private async fetchOpenIdConfig(issuerUrl: string): Promise<IOpenIdConfig> {
 		const issuerObj = new URL(issuerUrl);
 		issuerObj.pathname = path.join(issuerObj.pathname, '/.well-known/openid-configuration');
-		logger().debug(`jwt-util get JWT Configuration ${issuerObj.toString()}`);
+		this.logger?.debug(`jwt-util get JWT Configuration ${issuerObj.toString()}`);
 		const req = new Request(issuerObj.toString());
 		const res = await fetch(req);
 		return this.isValidResp(res).json();
