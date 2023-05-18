@@ -1,4 +1,4 @@
-import {CertRecords} from '../issuerCertLoader';
+import {CertRecords} from '../interfaces/CertRecords';
 
 export abstract class CertCache {
 	protected updateCallback: ((certs: CertRecords) => void) | undefined;

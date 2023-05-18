@@ -1,14 +1,14 @@
 import * as jwt from 'jsonwebtoken';
-import {AuthHeader, getTokenOrAuthHeader} from './AuthHeader';
 import {FullDecodedIssuerTokenStructure, FullDecodedTokenStructure, isIssuerToken, isTokenFullDecoded, TokenPayload} from './interfaces/token';
+import {AuthHeader} from '@avanio/auth-header';
 import {buildCertFrame} from './rsaPublicKeyPem';
 import {CertCache} from './cache/CertCache';
 import {ExpireCache} from '@avanio/expire-cache';
+import {getTokenOrAuthHeader} from './lib/authUtil';
 import {ILoggerLike} from '@avanio/logger-like';
 import {IssuerCertLoader} from './issuerCertLoader';
 import {JwtHeaderError} from './JwtHeaderError';
 export {FileCertCache} from './cache/FileCertCache';
-export {AuthHeader, getTokenOrAuthHeader, getAuthType, isAuthType} from './AuthHeader';
 
 const icl = new IssuerCertLoader();
 const cache = new ExpireCache<TokenPayload>();

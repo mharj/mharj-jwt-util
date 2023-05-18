@@ -1,7 +1,7 @@
 import * as fs from 'fs';
+import {CertRecords, isCertRecords} from '../interfaces/CertRecords';
 import {ILoggerLike, ISetOptionalLogger} from '@avanio/logger-like';
 import {CertCache} from './CertCache';
-import {CertRecords} from '../issuerCertLoader';
 
 interface IProps {
 	fileName?: string;
@@ -52,7 +52,9 @@ export class FileCertCache extends CertCache implements ISetOptionalLogger {
 			return initialCerts;
 		}
 		try {
-			return JSON.parse((await fs.promises.readFile(this.file)).toString());
+			const data = JSON.parse((await fs.promises.readFile(this.file)).toString());
+			// validate JSON cert records or use initialCerts
+			return isCertRecords(data) ? data : initialCerts;
 		} catch (err) {
 			return initialCerts;
 		}

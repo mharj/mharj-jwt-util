@@ -1,29 +1,12 @@
 import 'cross-fetch/polyfill';
+import {CertIssuerRecord, CertRecords} from './interfaces/CertRecords';
 import {ExpireCache, ExpireCacheLogMapType} from '@avanio/expire-cache';
 import {ILoggerLike, ISetOptionalLogger} from '@avanio/logger-like';
 import {CertCache} from './cache/CertCache';
+import {ICertItem} from './interfaces/ICertItem';
 import {posix as path} from 'path';
 import {rsaPublicKeyPem} from './rsaPublicKeyPem';
 import {URL} from 'url';
-
-interface ICertItem {
-	alg?: string;
-	kty: string;
-	use: string;
-	kid: string;
-	x5t?: string;
-	n: string;
-	e: string;
-	x5c?: string[];
-	issuer?: string;
-}
-
-type IssuerUrl = string;
-
-export interface CertRecords {
-	_ts: number;
-	certs: Record<IssuerUrl, ICertItem[] | undefined>;
-}
 
 interface IOpenIdConfig {
 	jwks_uri: string;
@@ -68,24 +51,22 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 	}
 
 	public async getCert(issuerUrl: string, kid: string): Promise<Buffer | string> {
+		this.logger?.debug(`jwt-util getCert ${issuerUrl} ${kid}`);
 		if (!this.cacheLoaded && this.cache) {
 			this.store = await this.cache.handleLoad();
 			this.logger?.debug(`jwt-util cacheLoaded ${this.countCerts()} certificates`);
 			this.cacheLoaded = true;
 		}
-		const certList = await this.getIssuerCerts(issuerUrl);
-		const cert = await this.getIssuerCert(certList, issuerUrl, kid);
-		return this.buildCert(cert);
+		const certIssuerRecord = await this.getIssuerCerts(issuerUrl);
+		return this.getIssuerCert(certIssuerRecord, issuerUrl, kid);
 	}
 
 	public deleteKid(issuerUrl: string, kid: string): boolean {
-		const issuer = this.store.certs[issuerUrl];
-		if (issuer) {
-			const certIndex = issuer.findIndex((c) => c.kid === kid);
-			if (certIndex !== -1) {
-				issuer.splice(certIndex, 1);
-				return true;
-			}
+		this.logger?.debug(`jwt-util deleteKid ${issuerUrl} ${kid}`);
+		const issuerRecord = this.store.certs[issuerUrl];
+		if (issuerRecord?.[kid]) {
+			delete issuerRecord[kid];
+			return true;
 		}
 		return false;
 	}
@@ -94,21 +75,21 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 		return Boolean(this.store.certs[issuerUrl]);
 	}
 
-	private async getIssuerCert(certList: ICertItem[], issuerUrl: string, kid: string) {
-		let cert = certList.find((c) => c.kid === kid);
+	private async getIssuerCert(certIssuerRecord: CertIssuerRecord, issuerUrl: string, kid: string): Promise<Buffer> {
+		let cert = certIssuerRecord[kid];
 		if (!cert) {
 			// we didn't find kid, reload all issuer certs
-			certList = await this.pullIssuerCerts(issuerUrl);
+			certIssuerRecord = await this.pullIssuerCerts(issuerUrl);
 		}
-		cert = certList.find((c) => c.kid === kid);
+		cert = certIssuerRecord[kid];
 		if (!cert) {
 			// after issuer certs update, we still don't have cert for kid, throw out
 			throw new Error(`no key Id '${kid}' found for issuer '${issuerUrl}'`);
 		}
-		return cert;
+		return Buffer.from(cert);
 	}
 
-	private async getIssuerCerts(issuerUrl: string): Promise<ICertItem[]> {
+	private async getIssuerCerts(issuerUrl: string): Promise<CertIssuerRecord> {
 		let issuer = this.store.certs[issuerUrl];
 		if (!issuer) {
 			issuer = await this.pullIssuerCerts(issuerUrl);
@@ -120,11 +101,17 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 		return issuer;
 	}
 
-	private async pullIssuerCerts(issuerUrl: string): Promise<ICertItem[]> {
+	private async pullIssuerCerts(issuerUrl: string): Promise<CertIssuerRecord> {
+		this.logger?.debug(`jwt-util pullIssuerCerts ${issuerUrl}`);
 		const certList = await this.getCertList(issuerUrl);
-		this.store.certs[issuerUrl] = certList.keys;
-		await this.saveCerts(); // we have a change
-		return this.store.certs[issuerUrl] as ICertItem[];
+		const output = certList.keys.reduce<CertIssuerRecord>((last, current) => {
+			last[current.kid] = this.buildStringCert(current);
+			return last;
+		}, {});
+
+		this.store.certs[issuerUrl] = output; // update store with latest issuer certs
+		await this.saveCerts(); // we have store change
+		return output;
 	}
 
 	private async saveCerts() {
@@ -136,17 +123,22 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 	}
 
 	private countCerts() {
-		return Object.values(this.store.certs).reduce((last, current) => last + (current?.length || 0), 0);
+		return Object.values(this.store.certs).reduce((last, current) => {
+			return last + Object.keys(current).length;
+		}, 0);
 	}
 
-	private buildCert(cert: ICertItem): Buffer {
+	/**
+	 * takes cert item and builds PEM string (from x5c or n and e)
+	 */
+	private buildStringCert(cert: ICertItem): string {
 		/* istanbul ignore else if  */
 		if (cert.n && cert.e) {
 			// we have modulo and exponent, build PEM to cert.x5c
-			cert.x5c = [rsaPublicKeyPem(cert.n, cert.e)];
+			return rsaPublicKeyPem(cert.n, cert.e);
 		}
 		if (cert.x5c) {
-			return Buffer.from(cert.x5c[0]);
+			return cert.x5c[0];
 		} else {
 			throw new Error('no cert found');
 		}
