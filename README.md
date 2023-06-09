@@ -12,20 +12,12 @@
 ## Usage example
 
 ```javascript
-// with async
+// with Bearer header
 try {
 	const {body, isCached} = await jwtBearerVerify(req.headers.authorization);
 } catch (err) {
 	console.log(err);
 }
-// or Promised
-jwtBearerVerify(req.headers.authorization)
-	.then(({body, isCached}) => {
-		// do something
-	})
-	.catch((err) => {
-		console.log(err);
-	});
 // or Just token
 try {
 	const {body, isCached} = await jwtVerify(process.env.GOOGLE_ID_TOKEN);
@@ -33,20 +25,41 @@ try {
 	console.log(err);
 }
 
-// or Promised token
-jwtVerify(process.env.GOOGLE_ID_TOKEN)
-	.then(({body, isCached}) => {
-		// do something
-	})
-	.catch((err) => {
-		console.log(err);
-	});
-
 // attach logger to see http requests (console and log4js should be working)
 setJwtLogger(console);
 ```
 
 ## Enable file caching
+
 ```javascript
 await useCache(new FileCertCache({fileName: './certCache.json'}));
+
+// or with Tachyon drive
+await useCache(new TachyonCertCache(new FileStorageDriver('FileCertCacheDriver', './certCache.json', certCacheBufferSerializer)));
+```
+
+## Enable verified token persist caching (Tachyon drive with encryption)
+
+```typescript
+import {CacheMap, TachyonExpireCache} from 'tachyon-expire-cache';
+import {CryptoBufferProcessor, FileStorageDriver} from 'tachyon-drive-node-fs';
+import {IPersistSerializer} from 'tachyon-drive';
+
+function cachePayloadSchema<T>(data: z.Schema<T>) {
+	return z.object({
+		data,
+		expires: z.number().optional(),
+	});
+}
+const anyObjectSchema = z.object({}).passthrough(); // or build token payload schema
+const bufferSerializer: IPersistSerializer<CacheMap<TokenPayload, RawJwtToken>, Buffer> = {
+	serialize: (data: CacheMap<TokenPayload, RawJwtToken>) => Buffer.from(JSON.stringify(Array.from(data))),
+	deserialize: (buffer: Buffer) => new Map(JSON.parse(buffer.toString())),
+	validator: (data: CacheMap<TokenPayload, RawJwtToken>) => z.map(z.string(), cachePayloadSchema(anyObjectSchema)).safeParse(data).success,
+};
+const processor = new CryptoBufferProcessor(Buffer.from('some-secret-key'));
+const driver = new FileStorageDriver('TokenStorageDriver', './tokenCache.aes', bufferSerializer, processor);
+const cache = new TachyonExpireCache<TokenPayload, RawJwtToken>(driver);
+
+await setTokenCache(cache);
 ```

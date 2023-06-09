@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as jwt from 'jsonwebtoken';
 
+export type RawJwtToken = `${string}.${string}.${string}`;
+
+export function isRawJwtToken(token: unknown): token is RawJwtToken {
+	return typeof token === 'string' && token.split('.').length === 3;
+}
+
 export interface TokenPayloadCommon extends Record<string, any> {
 	aud?: string;
 	exp?: number;

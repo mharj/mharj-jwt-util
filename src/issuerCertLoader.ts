@@ -25,8 +25,14 @@ export type IssuerCertLoaderOptions = {
 
 export class IssuerCertLoader implements ISetOptionalLogger {
 	private store: CertRecords = {_ts: 0, certs: {}};
+	/**
+	 * Cache for public certificates
+	 */
 	private cache: CertCache | undefined;
 	private cacheLoaded = false;
+	/**
+	 * Cache for OpenId configs
+	 */
 	private configCache: ExpireCache<IOpenIdConfig>;
 	private logger: ILoggerLike | undefined;
 
