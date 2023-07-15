@@ -1,6 +1,6 @@
 // http://stackoverflow.com/questions/18835132/xml-to-pem-in-node-js
 
-export const rsaPublicKeyPem = (modulusB64: string, exponentB64: string) => {
+export function rsaPublicKeyPem(modulusB64: string, exponentB64: string) {
 	const modulus = Buffer.from(modulusB64, 'base64');
 	const exponent = Buffer.from(exponentB64, 'base64');
 
@@ -26,18 +26,18 @@ export const rsaPublicKeyPem = (modulusB64: string, exponentB64: string) => {
 		exponentHex;
 
 	return Buffer.from(encodedPubkey, 'hex').toString('base64');
-};
+}
 
-export const buildCertFrame = (der: string | Buffer): Buffer | string => {
+export function buildCertFrame(der: string | Buffer): Buffer | string {
 	if (!Buffer.isBuffer(der)) {
-		return der as string;
+		return der;
 	}
 	const match = der.toString().match(/.{1,64}/g);
 	if (!match) {
 		throw new Error('Cert data error');
 	}
 	return Buffer.from('-----BEGIN RSA PUBLIC KEY-----\r\n' + match.join('\r\n') + '\r\n-----END RSA PUBLIC KEY-----\r\n');
-};
+}
 
 function prepadSigned(hexStr: string) {
 	const msb = hexStr[0];

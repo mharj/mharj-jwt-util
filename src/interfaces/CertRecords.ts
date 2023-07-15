@@ -1,4 +1,3 @@
-// import {certItemSchema} from './ICertItem';
 import {z} from 'zod';
 
 const issuerUrl = z.string().url();

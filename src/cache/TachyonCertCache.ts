@@ -22,7 +22,7 @@ export class TachyonCertCache extends CertCache {
 	}
 
 	protected async load(): Promise<CertRecords> {
-		return (await this.driver.hydrate()) || initialCerts;
+		return (await this.driver.hydrate()) ?? initialCerts;
 	}
 
 	protected save(certs: CertRecords): Promise<void> {
@@ -32,12 +32,12 @@ export class TachyonCertCache extends CertCache {
 
 export const certCacheStringSerializer: IPersistSerializer<CertRecords, string> = {
 	serialize: (certs: CertRecords): string => JSON.stringify(certs),
-	deserialize: (certs: string): CertRecords => JSON.parse(certs),
+	deserialize: (certs: string): CertRecords => JSON.parse(certs) as CertRecords,
 	validator: (certs: CertRecords): boolean => certRecordsSchema.safeParse(certs).success,
 };
 
 export const certCacheBufferSerializer: IPersistSerializer<CertRecords, Buffer> = {
 	serialize: (certs: CertRecords): Buffer => Buffer.from(JSON.stringify(certs)),
-	deserialize: (certs: Buffer): CertRecords => JSON.parse(certs.toString()),
+	deserialize: (certs: Buffer): CertRecords => JSON.parse(certs.toString()) as CertRecords,
 	validator: (certs: CertRecords): boolean => certRecordsSchema.safeParse(certs).success,
 };

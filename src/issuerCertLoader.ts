@@ -2,19 +2,14 @@ import 'cross-fetch/polyfill';
 import {CertIssuerRecord, CertRecords} from './interfaces/CertRecords';
 import {ExpireCache, ExpireCacheLogMapType} from '@avanio/expire-cache';
 import {ILoggerLike, ISetOptionalLogger} from '@avanio/logger-like';
+import {OpenIdConfig, openIdConfigSchema} from './interfaces/OpenIdConfig';
+import {OpenIdConfigCerts, openIdConfigCertsSchema} from './interfaces/OpenIdConfigCerts';
 import {CertCache} from './cache/CertCache';
-import {ICertItem} from './interfaces/ICertItem';
+import {formatZodError} from './lib/zodUtils';
+import {JsonWebKey} from './interfaces/JsonWebKey';
 import {posix as path} from 'path';
 import {rsaPublicKeyPem} from './rsaPublicKeyPem';
 import {URL} from 'url';
-
-interface IOpenIdConfig {
-	jwks_uri: string;
-}
-
-interface ICertList {
-	keys: ICertItem[];
-}
 
 export type IssuerCertLoaderOptions = {
 	/**
@@ -33,12 +28,12 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 	/**
 	 * Cache for OpenId configs
 	 */
-	private configCache: ExpireCache<IOpenIdConfig>;
+	private configCache: ExpireCache<OpenIdConfig>;
 	private logger: ILoggerLike | undefined;
 
 	constructor(logger?: ILoggerLike, {expireCacheLogMap}: IssuerCertLoaderOptions = {}) {
 		this.logger = logger;
-		this.configCache = new ExpireCache<IOpenIdConfig>(this.logger, expireCacheLogMap, 86400000); // default OpenId config cache for 24 hours
+		this.configCache = new ExpireCache<OpenIdConfig>(this.logger, expireCacheLogMap, 86400000); // default OpenId config cache for 24 hours
 	}
 
 	public setLogger(logger: ILoggerLike | undefined) {
@@ -102,22 +97,26 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 		}
 		/* istanbul ignore if  */
 		if (!issuer) {
-			throw new Error(`no '${issuer}' found!`);
+			throw new Error(`no '${issuerUrl}' found!`);
 		}
 		return issuer;
 	}
 
 	private async pullIssuerCerts(issuerUrl: string): Promise<CertIssuerRecord> {
-		this.logger?.debug(`jwt-util pullIssuerCerts ${issuerUrl}`);
-		const certList = await this.getCertList(issuerUrl);
-		const output = certList.keys.reduce<CertIssuerRecord>((last, current) => {
-			last[current.kid] = this.buildStringCert(current);
-			return last;
-		}, {});
+		try {
+			this.logger?.debug(`jwt-util pullIssuerCerts ${issuerUrl}`);
+			const certList = await this.getCertList(issuerUrl);
+			const output = certList.keys.reduce<CertIssuerRecord>((last, current) => {
+				last[current.kid] = this.buildStringCert(current);
+				return last;
+			}, {});
 
-		this.store.certs[issuerUrl] = output; // update store with latest issuer certs
-		await this.saveCerts(); // we have store change
-		return output;
+			this.store.certs[issuerUrl] = output; // update store with latest issuer certs
+			await this.saveCerts(); // we have store change
+			return output;
+		} catch (e) {
+			throw new Error(`pullIssuerCerts ${issuerUrl} ${e.message}`);
+		}
 	}
 
 	private async saveCerts() {
@@ -128,6 +127,9 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 		}
 	}
 
+	/**
+	 * Loops through all issuer certs and counts them
+	 */
 	private countCerts() {
 		return Object.values(this.store.certs).reduce((last, current) => {
 			return last + Object.keys(current).length;
@@ -137,7 +139,7 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 	/**
 	 * takes cert item and builds PEM string (from x5c or n and e)
 	 */
-	private buildStringCert(cert: ICertItem): string {
+	private buildStringCert(cert: JsonWebKey): string {
 		/* istanbul ignore else if  */
 		if (cert.n && cert.e) {
 			// we have modulo and exponent, build PEM to cert.x5c
@@ -150,14 +152,27 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 		}
 	}
 
-	private async getCertList(issuerUrl: string): Promise<ICertList> {
+	/**
+	 * Get cert list from issuer.
+	 */
+	private async getCertList(issuerUrl: string): Promise<OpenIdConfigCerts> {
 		this.logger?.debug(`jwt-util getCertList ${issuerUrl}`);
 		const config = await this.getConfiguration(issuerUrl);
 		const req = new Request(config.jwks_uri);
-		return fetch(req).then((resp) => this.isValidResp(resp).json());
+		const res = await fetch(req);
+		const data = (await this.isValidResp(res).json()) as unknown;
+		this.isValidJwtUriData(data);
+		return data;
 	}
 
-	private async getConfiguration(issuerUrl: string): Promise<IOpenIdConfig> {
+	/**
+	 * Get OpenId Configuration from issuer.
+	 *
+	 * - Uses cache if available
+	 * - If not in cache, downloads from issuer
+	 * - Caches config for 24h
+	 */
+	private async getConfiguration(issuerUrl: string): Promise<OpenIdConfig> {
 		const currentConfig = this.configCache.get(issuerUrl);
 		if (currentConfig) {
 			return currentConfig;
@@ -168,19 +183,57 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 		}
 	}
 
-	private async fetchOpenIdConfig(issuerUrl: string): Promise<IOpenIdConfig> {
+	/**
+	 * Download OpenId Configuration from issuer.
+	 */
+	private async fetchOpenIdConfig(issuerUrl: string): Promise<OpenIdConfig> {
 		const issuerObj = new URL(issuerUrl);
 		issuerObj.pathname = path.join(issuerObj.pathname, '/.well-known/openid-configuration');
 		this.logger?.debug(`jwt-util get JWT Configuration ${issuerObj.toString()}`);
 		const req = new Request(issuerObj.toString());
 		const res = await fetch(req);
-		return this.isValidResp(res).json();
+		const data = (await this.isValidResp(res).json()) as unknown;
+		this.isValidOpenIdConfig(data);
+		return data;
 	}
 
+	/**
+	 * Check if response is valid.
+	 *
+	 * - Ensure that response status is 200.
+	 */
 	private isValidResp(resp: Response): Response {
 		if (resp.status !== 200) {
 			throw new Error('fetch error: ' + resp.statusText);
 		}
 		return resp;
+	}
+
+	/**
+	 * Check if data is valid OpenID Config.
+	 *
+	 * - Ensure that data is not null and is an object type
+	 * - Ensure that data object has a jwks_uri key.
+	 */
+	private isValidOpenIdConfig(data: unknown): asserts data is OpenIdConfig {
+		try {
+			openIdConfigSchema.parse(data);
+		} catch (e) {
+			throw formatZodError(e);
+		}
+	}
+
+	/**
+	 * Check if data is valid JWT URI data.
+	 *
+	 * - Ensure that data is not null and is an object type
+	 * - Ensure that data object has a keys key.
+	 */
+	private isValidJwtUriData(data: unknown): asserts data is OpenIdConfigCerts {
+		try {
+			openIdConfigCertsSchema.parse(data);
+		} catch (e) {
+			throw formatZodError(e);
+		}
 	}
 }

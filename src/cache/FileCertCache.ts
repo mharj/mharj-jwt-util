@@ -22,8 +22,8 @@ export class FileCertCache extends CertCache implements ISetOptionalLogger {
 		super();
 		this.logger = logger;
 		this.logger?.info(`jwt-util FileCertCache registered`);
-		this.file = fileName || './certCache.json';
-		this.pretty = pretty || false;
+		this.file = fileName ?? './certCache.json';
+		this.pretty = pretty ?? false;
 	}
 
 	public setLogger(logger: ILoggerLike | undefined) {
@@ -52,7 +52,7 @@ export class FileCertCache extends CertCache implements ISetOptionalLogger {
 			return initialCerts;
 		}
 		try {
-			const data = JSON.parse((await fs.promises.readFile(this.file)).toString());
+			const data = JSON.parse((await fs.promises.readFile(this.file)).toString()) as unknown;
 			// validate JSON cert records or use initialCerts
 			return isCertRecords(data) ? data : initialCerts;
 		} catch (err) {
