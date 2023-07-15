@@ -10,6 +10,7 @@
         "prepublishOnly": "npm run build",
         "test": "nyc mocha",
         "azure-test": "nyc mocha",
+        "coverage": "nyc report --reporter=lcovonly",
         "lint": "eslint src"
     },
     "mocha": {
