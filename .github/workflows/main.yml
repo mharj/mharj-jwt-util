@@ -12,6 +12,12 @@ env:
   HAVE_COVERAGE_SCRIPT: false
   PACKAGE_VERSION: 'unknown'
   NPM_VERSION: 'unknown'
+  # unit test envs
+  AZ_CLIENT_ID: ${{ vars.AZ_CLIENT_ID }}
+  AZ_CLIENT_SECRET: ${{ secrets.AZ_CLIENT_SECRET }}
+  AZ_TENANT_ID: ${{ vars.AZ_TENANT_ID }}
+  GOOGLE_CLIENT_EMAIL: ${{ vars.GOOGLE_CLIENT_EMAIL }}
+  GOOGLE_CLIENT_KEY: ${{ secrets.GOOGLE_CLIENT_KEY }}
 
 jobs:
   build:
@@ -23,6 +29,7 @@ jobs:
         with:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
 
       - name: Read package information
         run: |
@@ -37,8 +44,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # - name: Run unit tests
-      #  run: npm test
+      - name: Run unit tests
+        run: npm test
 
       - name: Run linter checks
         run: npm run lint
