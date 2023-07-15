@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as jwt from 'jsonwebtoken';
+import {JwtHeaderError} from '../JwtHeaderError';
 
 export type RawJwtToken = `${string}.${string}.${string}`;
 
@@ -49,8 +50,20 @@ export function isIssuerToken(decoded: unknown): decoded is FullDecodedIssuerTok
 	);
 }
 
+export function assertIssuerToken(decoded: unknown): asserts decoded is FullDecodedIssuerTokenStructure {
+	if (!isIssuerToken(decoded)) {
+		throw new JwtHeaderError('token header: missing issuer parameter');
+	}
+}
+
 export function isTokenFullDecoded(decoded: unknown): decoded is FullDecodedTokenStructure {
 	return (
 		typeof decoded === 'object' && decoded !== null && 'payload' in (decoded as FullDecodedTokenStructure) && 'header' in (decoded as FullDecodedTokenStructure)
 	);
+}
+
+export function assertIsTokenFullDecoded(decoded: unknown): asserts decoded is FullDecodedTokenStructure {
+	if (!isTokenFullDecoded(decoded)) {
+		throw new JwtHeaderError("token header: Can't decode token");
+	}
 }

@@ -9,5 +9,5 @@ function formatZodIssue(issue: ZodIssue): string {
 
 // Format the Zod error message with only the current error
 export function formatZodError(error: ZodError): Error {
-	return new Error(error.issues.map(formatZodIssue).join('\n'));
+	return new Error(error.issues.map(formatZodIssue).join(', '));
 }

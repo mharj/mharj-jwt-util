@@ -1,14 +1,14 @@
 import * as jwt from 'jsonwebtoken';
-import {ExpireCache, ICacheOrAsync} from '@avanio/expire-cache';
 import {
+	assertIssuerToken,
+	assertIsTokenFullDecoded,
 	FullDecodedIssuerTokenStructure,
 	FullDecodedTokenStructure,
-	isIssuerToken,
 	isRawJwtToken,
-	isTokenFullDecoded,
 	RawJwtToken,
 	TokenPayload,
 } from './interfaces/token';
+import {ExpireCache, ICacheOrAsync} from '@avanio/expire-cache';
 import {AuthHeader} from '@avanio/auth-header';
 import {buildCertFrame} from './rsaPublicKeyPem';
 import {CertCache} from './cache/CertCache';
@@ -88,12 +88,8 @@ function getKeyIdAndSetOptions(decoded: FullDecodedTokenStructure, options: jwt.
  * @returns IIssuerTokenStructure which have "iss" and valid issuer if limited on options
  */
 function haveValidIssuer(decoded: unknown, options: jwt.VerifyOptions): FullDecodedIssuerTokenStructure {
-	if (!isTokenFullDecoded(decoded)) {
-		throw new JwtHeaderError("token header: Can't decode token");
-	}
-	if (!isIssuerToken(decoded)) {
-		throw new JwtHeaderError('token header: missing issuer parameter');
-	}
+	assertIsTokenFullDecoded(decoded);
+	assertIssuerToken(decoded);
 	if (options.issuer) {
 		// prevent loading rogue issuers data if not valid issuer
 		const allowedIssuers = Array.isArray(options.issuer) ? options.issuer : [options.issuer];
@@ -102,6 +98,18 @@ function haveValidIssuer(decoded: unknown, options: jwt.VerifyOptions): FullDeco
 		}
 	}
 	return decoded;
+}
+
+/**
+ * Takes token or auth header and return JWT token string
+ */
+function getTokenString(tokenOrBearer: string): string {
+	const currentToken = getTokenOrAuthHeader(tokenOrBearer);
+	// if Header only allow bearer as auth type
+	if (currentToken instanceof AuthHeader && currentToken.type !== 'BEARER') {
+		throw new JwtHeaderError('token header: wrong authentication header type');
+	}
+	return currentToken instanceof AuthHeader ? currentToken.credentials : currentToken;
 }
 
 /**
@@ -114,12 +122,7 @@ export type JwtResponse<T extends object> = {body: T & TokenPayload; isCached: b
  * @param options jwt verify options
  */
 export async function jwtVerify<T extends object>(tokenOrBearer: string, options: jwt.VerifyOptions = {}): Promise<JwtResponse<T>> {
-	const currentToken = getTokenOrAuthHeader(tokenOrBearer);
-	// only allow bearer as auth type
-	if (currentToken instanceof AuthHeader && currentToken.type !== 'BEARER') {
-		throw new JwtHeaderError('token header: wrong authentication header type');
-	}
-	const token = currentToken instanceof AuthHeader ? currentToken.credentials : currentToken;
+	const token = getTokenString(tokenOrBearer);
 	if (!isRawJwtToken(token)) {
 		throw new JwtHeaderError('Not JWT token string format');
 	}

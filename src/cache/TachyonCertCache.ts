@@ -17,6 +17,7 @@ export class TachyonCertCache extends CertCache {
 
 	protected async init(): Promise<void> {
 		if ((await this.driver.init()) === false) {
+			// istanbul ignore next
 			throw new Error('Failed to initialize driver');
 		}
 	}
