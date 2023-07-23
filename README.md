@@ -5,9 +5,10 @@
 ## Json Webtoken Utility to validate OpenID tokens against issuer public ssl keys
 
 - Can build public PEM cert from modulus + exponent (i.e. Google)
-- Utilizes cross-fetch polyfill for loading issuer discovery configuration and "jwks_uri" data, so should work on most of JS platforms
 - Caches issuer OpenID configuration 24h
 - New Token "kid" forces reloading jwks_uri data.
+
+Note: if running NodeJS less than 18.0.0 you need to install and use cross-fetch polyfill
 
 ## Usage example
 

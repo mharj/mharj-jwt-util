@@ -1,4 +1,3 @@
-import 'cross-fetch/polyfill';
 import {CertIssuerRecord, CertRecords} from './interfaces/CertRecords';
 import {ExpireCache, ExpireCacheLogMapType} from '@avanio/expire-cache';
 import {ILoggerLike, ISetOptionalLogger} from '@avanio/logger-like';

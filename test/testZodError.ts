@@ -1,7 +1,6 @@
 /* eslint-disable sort-imports, import/first, no-unused-expressions, sonarjs/no-duplicate-string */
 process.env.NODE_ENV = 'testing';
 import 'mocha';
-import 'cross-fetch/polyfill';
 import * as chai from 'chai';
 import {formatZodError} from '../src/lib/zodUtils';
 import {openIdConfigSchema} from '../src/interfaces/OpenIdConfig';

@@ -97,7 +97,6 @@
         "@avanio/auth-header": "^0.0.1",
         "@avanio/expire-cache": "^0.2.0",
         "@avanio/logger-like": "^0.1.1",
-        "cross-fetch": "^4.0.0",
         "jsonwebtoken": "^9.0.1",
         "tachyon-drive": "^0.3.2",
         "zod": "^3.21.4"
