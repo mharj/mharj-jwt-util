@@ -1,11 +1,11 @@
-import {CertIssuerRecord, CertRecords} from './interfaces/CertRecords';
+import {CertIssuerRecord, CertRecords} from '../interfaces/CertRecords';
 import {ExpireCache, ExpireCacheLogMapType} from '@avanio/expire-cache';
 import {ILoggerLike, ISetOptionalLogger} from '@avanio/logger-like';
-import {OpenIdConfig, openIdConfigSchema} from './interfaces/OpenIdConfig';
-import {OpenIdConfigCerts, openIdConfigCertsSchema} from './interfaces/OpenIdConfigCerts';
-import {CertCache} from './cache/CertCache';
-import {formatZodError} from './lib/zodUtils';
-import {JsonWebKey} from './interfaces/JsonWebKey';
+import {OpenIdConfig, openIdConfigSchema} from '../interfaces/OpenIdConfig';
+import {OpenIdConfigCerts, openIdConfigCertsSchema} from '../interfaces/OpenIdConfigCerts';
+import {CertCache} from '../cache/CertCache';
+import {formatZodError} from './zodUtils';
+import {JsonWebKey} from '../interfaces/JsonWebKey';
 import {posix as path} from 'path';
 import {rsaPublicKeyPem} from './rsaPublicKeyPem';
 import {URL} from 'url';
@@ -188,8 +188,8 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 	private async fetchOpenIdConfig(issuerUrl: string): Promise<OpenIdConfig> {
 		const issuerObj = new URL(issuerUrl);
 		issuerObj.pathname = path.join(issuerObj.pathname, '/.well-known/openid-configuration');
-		this.logger?.debug(`jwt-util get JWT Configuration ${issuerObj.toString()}`);
-		const req = new Request(issuerObj.toString());
+		this.logger?.debug(`jwt-util get JWT Configuration ${issuerObj.href}`);
+		const req = new Request(issuerObj);
 		const res = await fetch(req);
 		const data = (await this.isValidResp(res).json()) as unknown;
 		this.isValidOpenIdConfig(data);

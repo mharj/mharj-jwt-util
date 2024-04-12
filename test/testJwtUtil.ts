@@ -10,12 +10,15 @@ import {CacheMap, TachyonExpireCache} from 'tachyon-expire-cache';
 import {CryptoBufferProcessor, FileStorageDriver} from 'tachyon-drive-node-fs';
 import {IPersistSerializer, MemoryStorageDriver} from 'tachyon-drive';
 import {
+	buildCertFrame,
 	certCacheBufferSerializer,
 	certCacheStringSerializer,
 	FileCertCache,
+	IssuerCertLoader,
 	jwtBearerVerify,
 	jwtDeleteKid,
 	jwtHaveIssuer,
+	JwtHeaderError,
 	jwtVerify,
 	jwtVerifyPromise,
 	RawJwtToken,
@@ -27,11 +30,8 @@ import {
 	useCache,
 } from '../src';
 import {z} from 'zod';
-import {buildCertFrame} from '../src/rsaPublicKeyPem';
 import {Credentials} from 'google-auth-library';
 import {google} from 'googleapis';
-import {IssuerCertLoader} from '../src/issuerCertLoader';
-import {JwtHeaderError} from '../src/JwtHeaderError';
 
 dotenv.config();
 

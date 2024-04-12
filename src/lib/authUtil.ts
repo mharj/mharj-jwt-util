@@ -1,5 +1,5 @@
 import {AuthHeader, isAuthHeaderLikeString} from '@avanio/auth-header';
-import {JwtHeaderError} from '../JwtHeaderError';
+import {JwtHeaderError} from './JwtHeaderError';
 
 /**
  * return AuthHeader instance or string

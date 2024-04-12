@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as jwt from 'jsonwebtoken';
-import {JwtHeaderError} from '../JwtHeaderError';
+import {JwtHeaderError} from '../lib/JwtHeaderError';
 
 export type RawJwtToken = `${string}.${string}.${string}`;
 
