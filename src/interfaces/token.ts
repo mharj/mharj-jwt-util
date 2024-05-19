@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as jwt from 'jsonwebtoken';
+import type {Algorithm} from 'jsonwebtoken';
 import {JwtHeaderError} from '../lib/JwtHeaderError';
 
 export type RawJwtToken = `${string}.${string}.${string}`;
@@ -26,7 +26,7 @@ export type TokenIssuerPayload<T = Record<string, any>> = TokenIssuerPayloadComm
 
 export interface TokenHeader extends Record<string, any> {
 	kid?: string;
-	alg: jwt.Algorithm | undefined;
+	alg: Algorithm | undefined;
 	typ: string | undefined;
 }
 

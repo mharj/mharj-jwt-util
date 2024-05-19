@@ -1,4 +1,4 @@
-import {ZodError, ZodIssue} from 'zod';
+import type {ZodError, ZodIssue} from 'zod';
 
 function formatZodIssue(issue: ZodIssue): string {
 	const {path, message} = issue;

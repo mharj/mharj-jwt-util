@@ -2,18 +2,18 @@ import * as jwt from 'jsonwebtoken';
 import {
 	assertIssuerToken,
 	assertIsTokenFullDecoded,
-	FullDecodedIssuerTokenStructure,
-	FullDecodedTokenStructure,
+	type FullDecodedIssuerTokenStructure,
+	type FullDecodedTokenStructure,
 	isRawJwtToken,
-	RawJwtToken,
-	TokenPayload,
+	type RawJwtToken,
+	type TokenPayload,
 } from '../interfaces/token';
-import {ExpireCache, ICacheOrAsync} from '@avanio/expire-cache';
+import {ExpireCache, type ICacheOrAsync} from '@avanio/expire-cache';
 import {AuthHeader} from '@avanio/auth-header';
 import {buildCertFrame} from './rsaPublicKeyPem';
-import {CertCache} from '../cache/CertCache';
+import {type CertCache} from '../cache/CertCache';
 import {getTokenOrAuthHeader} from './authUtil';
-import {ILoggerLike} from '@avanio/logger-like';
+import {type ILoggerLike} from '@avanio/logger-like';
 import {IssuerCertLoader} from './issuerCertLoader';
 import {JwtHeaderError} from './JwtHeaderError';
 import {jwtVerifyPromise} from './jwtUtil';

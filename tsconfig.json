@@ -1,8 +1,8 @@
 {
 	"compilerOptions": {
 	  "module": "commonjs",
-	  "target": "es6",
-	  "lib": ["es2017", "dom"],
+	  "target": "es2021",
+	  "lib": ["ES2021", "dom"],
 	  "rootDir": "./src",
 	  "outDir": "./dist",
 	  "moduleResolution": "node",
@@ -19,6 +19,11 @@
 	  "importHelpers": false,
 	  "strictNullChecks": true,
 	  "noUnusedLocals": true,
+	  "strict": true,
+	  "esModuleInterop": true
+	},
+	"ts-node": {
+		"swc": true
 	},
 	"exclude": [
 		"test/*",

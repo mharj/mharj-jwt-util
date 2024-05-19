@@ -5,7 +5,7 @@
 		"sourceType": "module",
 		"project": "./tsconfig.test.json"
 	},
-	"plugins": ["@typescript-eslint", "prettier", "sonarjs", "deprecation"],
+	"plugins": ["@typescript-eslint", "@stylistic/ts", "prettier", "sonarjs", "deprecation"],
 	"extends": [
 		"standard",
 		"eslint:recommended",
@@ -46,7 +46,7 @@
 		],
 		"deprecation/deprecation": "warn",
 		"lines-between-class-members": "off",
-		"@typescript-eslint/lines-between-class-members": [
+		"@stylistic/ts/lines-between-class-members": [
 			"warn",
 			"always",
 			{
@@ -60,6 +60,7 @@
 				"checksVoidReturn": false
 			}
 		],
-		"@typescript-eslint/consistent-type-definitions": "off"
+		"@typescript-eslint/consistent-type-definitions": "off",
+		"@typescript-eslint/consistent-type-imports": ["error", {"prefer": "type-imports", "fixStyle": "inline-type-imports"}]
 	}
 }

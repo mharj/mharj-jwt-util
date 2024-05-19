@@ -1,11 +1,11 @@
-import {CertRecords} from '../interfaces/CertRecords';
+import {type CertRecords} from '../interfaces/CertRecords';
 
 export abstract class CertCache {
 	protected updateCallback: ((certs: CertRecords) => void) | undefined;
-	private ts: number;
-	protected abstract init(): Promise<void>;
-	protected abstract load(): Promise<CertRecords>;
-	protected abstract save(certs: CertRecords): Promise<void>;
+	private ts: number | undefined;
+	protected abstract init(): void | Promise<void>;
+	protected abstract load(): CertRecords | Promise<CertRecords>;
+	protected abstract save(certs: CertRecords): void | Promise<void>;
 	protected handleUpdate(certs: CertRecords) {
 		if (this.updateCallback && certs._ts !== this.ts) {
 			this.updateCallback(certs);
@@ -16,15 +16,15 @@ export abstract class CertCache {
 		this.updateCallback = callback;
 	}
 
-	public handleInit(): Promise<void> {
+	public handleInit(): void | Promise<void> {
 		return this.init();
 	}
 
-	public handleLoad(): Promise<CertRecords> {
+	public handleLoad(): CertRecords | Promise<CertRecords> {
 		return this.load();
 	}
 
-	public handleSave(certs: CertRecords): Promise<void> {
+	public handleSave(certs: CertRecords): void | Promise<void> {
 		this.ts = certs._ts;
 		return this.save(certs);
 	}

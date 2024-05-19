@@ -1,14 +1,15 @@
-import {CertIssuerRecord, CertRecords} from '../interfaces/CertRecords';
-import {ExpireCache, ExpireCacheLogMapType} from '@avanio/expire-cache';
-import {ILoggerLike, ISetOptionalLogger} from '@avanio/logger-like';
-import {OpenIdConfig, openIdConfigSchema} from '../interfaces/OpenIdConfig';
-import {OpenIdConfigCerts, openIdConfigCertsSchema} from '../interfaces/OpenIdConfigCerts';
-import {CertCache} from '../cache/CertCache';
+import {type CertIssuerRecord, type CertRecords} from '../interfaces/CertRecords';
+import {ExpireCache, type ExpireCacheLogMapType} from '@avanio/expire-cache';
+import {type ILoggerLike, type ISetOptionalLogger} from '@avanio/logger-like';
+import {type OpenIdConfig, openIdConfigSchema} from '../interfaces/OpenIdConfig';
+import {type OpenIdConfigCerts, openIdConfigCertsSchema} from '../interfaces/OpenIdConfigCerts';
+import {type CertCache} from '../cache/CertCache';
 import {formatZodError} from './zodUtils';
-import {JsonWebKey} from '../interfaces/JsonWebKey';
+import {type JsonWebKey} from '../interfaces/JsonWebKey';
 import {posix as path} from 'path';
 import {rsaPublicKeyPem} from './rsaPublicKeyPem';
 import {URL} from 'url';
+import {assertZodError, getError} from '.';
 
 export type IssuerCertLoaderOptions = {
 	/**
@@ -114,7 +115,7 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 			await this.saveCerts(); // we have store change
 			return output;
 		} catch (e) {
-			throw new Error(`pullIssuerCerts ${issuerUrl} ${e.message}`);
+			throw new Error(`pullIssuerCerts ${issuerUrl} ${getError(e).message}`);
 		}
 	}
 
@@ -218,6 +219,7 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 		try {
 			openIdConfigSchema.parse(data);
 		} catch (e) {
+			assertZodError(e);
 			throw formatZodError(e);
 		}
 	}
@@ -232,6 +234,7 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 		try {
 			openIdConfigCertsSchema.parse(data);
 		} catch (e) {
+			assertZodError(e);
 			throw formatZodError(e);
 		}
 	}

@@ -1,5 +1,5 @@
-import {CertRecords, certRecordsSchema} from '../interfaces/CertRecords';
-import {IPersistSerializer, IStorageDriver} from 'tachyon-drive';
+import {type CertRecords, certRecordsSchema} from '../interfaces/CertRecords';
+import {type IPersistSerializer, type IStorageDriver} from 'tachyon-drive';
 import {CertCache} from './CertCache';
 
 const initialCerts: CertRecords = {
@@ -26,7 +26,7 @@ export class TachyonCertCache extends CertCache {
 		return (await this.driver.hydrate()) ?? initialCerts;
 	}
 
-	protected save(certs: CertRecords): Promise<void> {
+	protected save(certs: CertRecords): void | Promise<void> {
 		return this.driver.store(certs);
 	}
 }

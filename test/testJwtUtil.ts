@@ -1,14 +1,14 @@
 /* eslint-disable sort-imports, import/first, no-unused-expressions, sonarjs/no-duplicate-string */
 process.env.NODE_ENV = 'testing';
 import 'mocha';
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-import * as dotenv from 'dotenv';
-import * as fs from 'fs';
-import * as jwt from 'jsonwebtoken';
-import {CacheMap, TachyonExpireCache} from 'tachyon-expire-cache';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import dotenv from 'dotenv';
+import fs from 'node:fs';
+import {sign as jwtSign, decode as jwtDecode, type JwtPayload} from 'jsonwebtoken';
+import {type CacheMap, TachyonExpireCache} from 'tachyon-expire-cache';
 import {CryptoBufferProcessor, FileStorageDriver} from 'tachyon-drive-node-fs';
-import {IPersistSerializer, MemoryStorageDriver} from 'tachyon-drive';
+import {type IPersistSerializer, MemoryStorageDriver} from 'tachyon-drive';
 import {
 	buildCertFrame,
 	certCacheBufferSerializer,
@@ -21,16 +21,16 @@ import {
 	JwtHeaderError,
 	jwtVerify,
 	jwtVerifyPromise,
-	RawJwtToken,
+	type RawJwtToken,
 	setCertLoader,
 	setTokenCache,
 	TachyonCertCache,
 	testGetCache,
-	TokenPayload,
+	type TokenPayload,
 	useCache,
 } from '../src';
 import {z} from 'zod';
-import {Credentials} from 'google-auth-library';
+import {type Credentials} from 'google-auth-library';
 import {google} from 'googleapis';
 
 dotenv.config();
@@ -111,8 +111,8 @@ const bufferSerializer: IPersistSerializer<CacheMap<TokenPayload, RawJwtToken>, 
 	validator: (data: CacheMap<TokenPayload, RawJwtToken>) => z.map(z.string(), cachePayloadSchema(anyObjectSchema)).safeParse(data).success,
 };
 const processor = new CryptoBufferProcessor(Buffer.from('some-secret-key'));
-const driver = new FileStorageDriver('TokenStorageDriver', './tokenCache.aes', bufferSerializer, processor);
-const cache = new TachyonExpireCache<TokenPayload, RawJwtToken>(driver);
+const driver = new FileStorageDriver('TokenStorageDriver', {fileName: './tokenCache.aes'}, bufferSerializer, processor);
+const cache = new TachyonExpireCache<TokenPayload, RawJwtToken>('TachyonExpireCache', driver);
 
 describe('jwtUtil', () => {
 	before(async function () {
@@ -133,15 +133,15 @@ describe('jwtUtil', () => {
 			await expect(jwtVerify('asd.asd.asd')).to.be.eventually.rejectedWith(Error, "Can't decode token");
 		});
 		it('should fail is issuer url is missing', async () => {
-			const test = jwt.sign({}, 'test');
+			const test = jwtSign({}, 'test');
 			await expect(jwtVerify(test)).to.be.eventually.rejectedWith(JwtHeaderError, 'token header: missing issuer parameter');
 		});
 		it('should fail is kid is missing', async () => {
-			const test = jwt.sign({}, 'test', {issuer: 'https://accounts.google.com'});
+			const test = jwtSign({}, 'test', {issuer: 'https://accounts.google.com'});
 			await expect(jwtVerify(test)).to.be.eventually.rejectedWith(JwtHeaderError, 'token header: missing kid parameter');
 		});
 		it('should fail if auth type is not Bearer', async () => {
-			const test = jwt.sign({}, 'test', {issuer: 'https://accounts.google.com'});
+			const test = jwtSign({}, 'test', {issuer: 'https://accounts.google.com'});
 			await expect(jwtVerify(`Basic ${test}`)).to.be.eventually.rejectedWith(JwtHeaderError, 'token header: wrong authentication header type');
 		});
 		it('should not load issuer certs if not allowed', async () => {
@@ -198,7 +198,7 @@ describe('jwtUtil', () => {
 			}
 		});
 		it('Test non issuer token ', async () => {
-			const test = jwt.sign({test: 'asd'}, 'secret');
+			const test = jwtSign({test: 'asd'}, 'secret');
 			try {
 				await jwtVerify(test);
 				throw new Error("should not happen as we don't have parameters");
@@ -215,7 +215,7 @@ describe('jwtUtil', () => {
 			}
 		});
 		it('Test delete kid and check force reload', async () => {
-			const decoded = jwt.decode(GOOGLE_ID_TOKEN, {complete: true}) as jwt.JwtPayload;
+			const decoded = jwtDecode(GOOGLE_ID_TOKEN, {complete: true}) as JwtPayload;
 			jwtDeleteKid(decoded.payload.iss, decoded.header.kid);
 			jwtDeleteKid('test', decoded.header.kid);
 			const decode = await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
@@ -241,7 +241,7 @@ describe('jwtUtil', () => {
 				await fs.promises.unlink('./unitTestCache.json');
 			}
 			setTokenCache(cache);
-			await useCache(new TachyonCertCache(new FileStorageDriver('FileCertCacheDriver', './unitTestCache.json', certCacheBufferSerializer)));
+			await useCache(new TachyonCertCache(new FileStorageDriver('FileCertCacheDriver', {fileName: './unitTestCache.json'}, certCacheBufferSerializer)));
 		});
 		it('Test Google IdToken', async function () {
 			this.slow(100);
@@ -252,7 +252,7 @@ describe('jwtUtil', () => {
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(true);
 		});
 		it('Test Google IdToken cached', async () => {
-			setTokenCache(new TachyonExpireCache<TokenPayload, RawJwtToken>(driver)); // rebuild new cache
+			setTokenCache(new TachyonExpireCache<TokenPayload, RawJwtToken>('TachyonExpireCache', driver)); // rebuild new cache
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string);
 			expect(body).not.to.be.null;
 			expect(isCached).to.be.eq(true);
@@ -283,7 +283,7 @@ describe('jwtUtil', () => {
 			}
 		});
 		it('Test non issuer token ', async () => {
-			const test = jwt.sign({test: 'asd'}, 'secret');
+			const test = jwtSign({test: 'asd'}, 'secret');
 			try {
 				await jwtVerify(test);
 				throw new Error("should not happen as we don't have parameters");
@@ -300,7 +300,7 @@ describe('jwtUtil', () => {
 			}
 		});
 		it('Test delete kid and check force reload', async () => {
-			const decoded = jwt.decode(GOOGLE_ID_TOKEN, {complete: true}) as jwt.JwtPayload;
+			const decoded = jwtDecode(GOOGLE_ID_TOKEN, {complete: true}) as JwtPayload;
 			jwtDeleteKid(decoded.payload.iss, decoded.header.kid);
 			jwtDeleteKid('test', decoded.header.kid);
 			const decode = await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
@@ -334,7 +334,7 @@ describe('jwtUtil', () => {
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(true);
 		});
 		it('Test Google IdToken cached', async () => {
-			setTokenCache(new TachyonExpireCache<TokenPayload, RawJwtToken>(driver)); // rebuild new cache
+			setTokenCache(new TachyonExpireCache<TokenPayload, RawJwtToken>('TachyonExpireCache', driver)); // rebuild new cache
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string);
 			expect(body).not.to.be.null;
 			expect(isCached).to.be.eq(true);
@@ -365,7 +365,7 @@ describe('jwtUtil', () => {
 			}
 		});
 		it('Test non issuer token ', async () => {
-			const test = jwt.sign({test: 'asd'}, 'secret');
+			const test = jwtSign({test: 'asd'}, 'secret');
 			try {
 				await jwtVerify(test);
 				throw new Error("should not happen as we don't have parameters");
@@ -382,7 +382,7 @@ describe('jwtUtil', () => {
 			}
 		});
 		it('Test delete kid and check force reload', async () => {
-			const decoded = jwt.decode(GOOGLE_ID_TOKEN, {complete: true}) as jwt.JwtPayload;
+			const decoded = jwtDecode(GOOGLE_ID_TOKEN, {complete: true}) as JwtPayload;
 			jwtDeleteKid(decoded.payload.iss, decoded.header.kid);
 			jwtDeleteKid('test', decoded.header.kid);
 			const decode = await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});

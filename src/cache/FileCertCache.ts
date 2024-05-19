@@ -1,6 +1,6 @@
 import * as fs from 'fs';
-import {CertRecords, isCertRecords} from '../interfaces/CertRecords';
-import {ILoggerLike, ISetOptionalLogger} from '@avanio/logger-like';
+import {type CertRecords, isCertRecords} from '../interfaces/CertRecords';
+import {type ILoggerLike, type ISetOptionalLogger} from '@avanio/logger-like';
 import {CertCache} from './CertCache';
 
 interface IProps {

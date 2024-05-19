@@ -5,3 +5,4 @@ export * from './rsaPublicKeyPem';
 export * from './issuerCertLoader';
 export * from './JwtHeaderError';
 export * from './jwtValidate';
+export * from './errorUtil';
