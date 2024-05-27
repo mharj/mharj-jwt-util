@@ -108,7 +108,7 @@
         "@avanio/expire-cache": "^0.3.3",
         "@avanio/logger-like": "^0.1.1",
         "jsonwebtoken": "^9.0.2",
-        "tachyon-drive": "^0.6.0",
+        "tachyon-drive": "^0.7.0",
         "zod": "^3.23.8"
     }
 }
