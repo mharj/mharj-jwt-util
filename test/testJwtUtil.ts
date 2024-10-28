@@ -106,6 +106,7 @@ function cachePayloadSchema<T>(data: z.Schema<T>) {
 }
 const anyObjectSchema = z.object({}).passthrough(); // or build token payload schema
 const bufferSerializer: IPersistSerializer<CacheMap<TokenPayload, RawJwtToken>, Buffer> = {
+	name: 'bufferSerializer',
 	serialize: (data: CacheMap<TokenPayload, RawJwtToken>) => Buffer.from(JSON.stringify(Array.from(data))),
 	deserialize: (buffer: Buffer) => new Map(JSON.parse(buffer.toString())),
 	validator: (data: CacheMap<TokenPayload, RawJwtToken>) => z.map(z.string(), cachePayloadSchema(anyObjectSchema)).safeParse(data).success,
@@ -163,13 +164,13 @@ describe('jwtUtil', () => {
 			this.slow(100);
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string, {issuer: ['https://accounts.google.com']});
-			expect(body).not.to.be.null;
+			expect(body).not.to.be.eq(null);
 			expect(isCached).to.be.eq(false);
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(true);
 		});
 		it('Test Google IdToken cached', async () => {
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string);
-			expect(body).not.to.be.null;
+			expect(body).not.to.be.eq(null);
 			expect(isCached).to.be.eq(true);
 		});
 		it('Test jwt cache speed (jwt 100 times)', async function () {
@@ -180,20 +181,20 @@ describe('jwtUtil', () => {
 		});
 		it('Test Google token as Bearer Token', async () => {
 			const {body, isCached} = await jwtBearerVerify<{test?: string}>('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
-			expect(body).not.to.be.undefined;
-			expect(body.aud).not.to.be.undefined;
-			expect(body.exp).not.to.be.undefined;
-			expect(body.iat).not.to.be.undefined;
-			expect(body.iss).not.to.be.undefined;
-			expect(body.sub).not.to.be.undefined;
-			expect(body.test).to.be.undefined;
+			expect(body).not.to.be.eq(undefined);
+			expect(body.aud).not.to.be.eq(undefined);
+			expect(body.exp).not.to.be.eq(undefined);
+			expect(body.iat).not.to.be.eq(undefined);
+			expect(body.iss).not.to.be.eq(undefined);
+			expect(body.sub).not.to.be.eq(undefined);
+			expect(body.test).to.be.eq(undefined);
 			expect(isCached).to.be.eq(true);
 		});
 		it('Test non Bearer auth', async () => {
 			try {
 				await jwtBearerVerify('Basic some:fun');
 				throw new Error("should not happen as we don't have parameters");
-			} catch (err) {
+			} catch (_err) {
 				// ok
 			}
 		});
@@ -202,7 +203,7 @@ describe('jwtUtil', () => {
 			try {
 				await jwtVerify(test);
 				throw new Error("should not happen as we don't have parameters");
-			} catch (err) {
+			} catch (_err) {
 				// ok
 			}
 		});
@@ -210,7 +211,7 @@ describe('jwtUtil', () => {
 			try {
 				await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['not_valid_issuer']});
 				throw new Error("should not happen as we don't have parameters");
-			} catch (err) {
+			} catch (_err) {
 				// ok
 			}
 		});
@@ -219,12 +220,12 @@ describe('jwtUtil', () => {
 			jwtDeleteKid(decoded.payload.iss, decoded.header.kid);
 			jwtDeleteKid('test', decoded.header.kid);
 			const decode = await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
-			expect(decode).not.to.be.null;
+			expect(decode).not.to.be.eq(null);
 		});
 		it('test Azure ID Token ', async function () {
 			this.slow(500);
 			const decode = await jwtVerify(`Bearer ${AZURE_ACCESS_TOKEN}`);
-			expect(decode).not.to.be.null;
+			expect(decode).not.to.be.eq(null);
 		});
 		after(async () => {
 			if (fs.existsSync('./unitTestCache.json')) {
@@ -247,14 +248,14 @@ describe('jwtUtil', () => {
 			this.slow(100);
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string, {issuer: ['https://accounts.google.com']});
-			expect(body).not.to.be.null;
+			expect(body).not.to.be.eq(null);
 			expect(isCached).to.be.eq(false);
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(true);
 		});
 		it('Test Google IdToken cached', async () => {
 			setTokenCache(new TachyonExpireCache<TokenPayload, RawJwtToken>('TachyonExpireCache', driver)); // rebuild new cache
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string);
-			expect(body).not.to.be.null;
+			expect(body).not.to.be.eq(null);
 			expect(isCached).to.be.eq(true);
 		});
 		it('Test jwt cache speed (jwt 100 times)', async function () {
@@ -265,20 +266,20 @@ describe('jwtUtil', () => {
 		});
 		it('Test Google token as Bearer Token', async () => {
 			const {body, isCached} = await jwtBearerVerify<{test?: string}>('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
-			expect(body).not.to.be.undefined;
-			expect(body.aud).not.to.be.undefined;
-			expect(body.exp).not.to.be.undefined;
-			expect(body.iat).not.to.be.undefined;
-			expect(body.iss).not.to.be.undefined;
-			expect(body.sub).not.to.be.undefined;
-			expect(body.test).to.be.undefined;
+			expect(body).not.to.be.eq(undefined);
+			expect(body.aud).not.to.be.eq(undefined);
+			expect(body.exp).not.to.be.eq(undefined);
+			expect(body.iat).not.to.be.eq(undefined);
+			expect(body.iss).not.to.be.eq(undefined);
+			expect(body.sub).not.to.be.eq(undefined);
+			expect(body.test).to.be.eq(undefined);
 			expect(isCached).to.be.eq(true);
 		});
 		it('Test non Bearer auth', async () => {
 			try {
 				await jwtBearerVerify('Basic some:fun');
 				throw new Error("should not happen as we don't have parameters");
-			} catch (err) {
+			} catch (_err) {
 				// ok
 			}
 		});
@@ -287,7 +288,7 @@ describe('jwtUtil', () => {
 			try {
 				await jwtVerify(test);
 				throw new Error("should not happen as we don't have parameters");
-			} catch (err) {
+			} catch (_err) {
 				// ok
 			}
 		});
@@ -295,7 +296,7 @@ describe('jwtUtil', () => {
 			try {
 				await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['not_valid_issuer']});
 				throw new Error("should not happen as we don't have parameters");
-			} catch (err) {
+			} catch (_err) {
 				// ok
 			}
 		});
@@ -304,12 +305,12 @@ describe('jwtUtil', () => {
 			jwtDeleteKid(decoded.payload.iss, decoded.header.kid);
 			jwtDeleteKid('test', decoded.header.kid);
 			const decode = await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
-			expect(decode).not.to.be.null;
+			expect(decode).not.to.be.eq(null);
 		});
 		it('test Azure ID Token ', async function () {
 			this.slow(500);
 			const decode = await jwtVerify(`Bearer ${AZURE_ACCESS_TOKEN}`);
-			expect(decode).not.to.be.null;
+			expect(decode).not.to.be.eq(null);
 		});
 		after(async () => {
 			if (fs.existsSync('./unitTestCache.json')) {
@@ -329,14 +330,14 @@ describe('jwtUtil', () => {
 			this.slow(100);
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string, {issuer: ['https://accounts.google.com']});
-			expect(body).not.to.be.null;
+			expect(body).not.to.be.eq(null);
 			expect(isCached).to.be.eq(false);
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(true);
 		});
 		it('Test Google IdToken cached', async () => {
 			setTokenCache(new TachyonExpireCache<TokenPayload, RawJwtToken>('TachyonExpireCache', driver)); // rebuild new cache
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN as string);
-			expect(body).not.to.be.null;
+			expect(body).not.to.be.eq(null);
 			expect(isCached).to.be.eq(true);
 		});
 		it('Test jwt cache speed (jwt 100 times)', async function () {
@@ -347,20 +348,20 @@ describe('jwtUtil', () => {
 		});
 		it('Test Google token as Bearer Token', async () => {
 			const {body, isCached} = await jwtBearerVerify<{test?: string}>('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
-			expect(body).not.to.be.undefined;
-			expect(body.aud).not.to.be.undefined;
-			expect(body.exp).not.to.be.undefined;
-			expect(body.iat).not.to.be.undefined;
-			expect(body.iss).not.to.be.undefined;
-			expect(body.sub).not.to.be.undefined;
-			expect(body.test).to.be.undefined;
+			expect(body).not.to.be.eq(undefined);
+			expect(body.aud).not.to.be.eq(undefined);
+			expect(body.exp).not.to.be.eq(undefined);
+			expect(body.iat).not.to.be.eq(undefined);
+			expect(body.iss).not.to.be.eq(undefined);
+			expect(body.sub).not.to.be.eq(undefined);
+			expect(body.test).to.be.eq(undefined);
 			expect(isCached).to.be.eq(true);
 		});
 		it('Test non Bearer auth', async () => {
 			try {
 				await jwtBearerVerify('Basic some:fun');
 				throw new Error("should not happen as we don't have parameters");
-			} catch (err) {
+			} catch (_err) {
 				// ok
 			}
 		});
@@ -369,7 +370,7 @@ describe('jwtUtil', () => {
 			try {
 				await jwtVerify(test);
 				throw new Error("should not happen as we don't have parameters");
-			} catch (err) {
+			} catch (_err) {
 				// ok
 			}
 		});
@@ -377,7 +378,7 @@ describe('jwtUtil', () => {
 			try {
 				await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['not_valid_issuer']});
 				throw new Error("should not happen as we don't have parameters");
-			} catch (err) {
+			} catch (_err) {
 				// ok
 			}
 		});
@@ -386,12 +387,12 @@ describe('jwtUtil', () => {
 			jwtDeleteKid(decoded.payload.iss, decoded.header.kid);
 			jwtDeleteKid('test', decoded.header.kid);
 			const decode = await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
-			expect(decode).not.to.be.null;
+			expect(decode).not.to.be.eq(null);
 		});
 		it('test Azure ID Token ', async function () {
 			this.slow(500);
 			const decode = await jwtVerify(`Bearer ${AZURE_ACCESS_TOKEN}`);
-			expect(decode).not.to.be.null;
+			expect(decode).not.to.be.eq(null);
 		});
 	});
 	describe('test IssuerCertLoader', () => {

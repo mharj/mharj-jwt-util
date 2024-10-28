@@ -55,7 +55,7 @@ export class FileCertCache extends CertCache implements ISetOptionalLogger {
 			const data = JSON.parse((await fs.promises.readFile(this.file)).toString()) as unknown;
 			// validate JSON cert records or use initialCerts
 			return isCertRecords(data) ? data : initialCerts;
-		} catch (err) {
+		} catch (_err) {
 			return initialCerts;
 		}
 	}

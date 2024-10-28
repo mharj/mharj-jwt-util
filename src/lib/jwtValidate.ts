@@ -8,11 +8,12 @@ import {
 	type RawJwtToken,
 	type TokenPayload,
 } from '../interfaces/token';
-import {ExpireCache, type ICacheOrAsync} from '@avanio/expire-cache';
 import {AuthHeader} from '@avanio/auth-header';
 import {buildCertFrame} from './rsaPublicKeyPem';
 import {type CertCache} from '../cache/CertCache';
+import {ExpireCache} from '@avanio/expire-cache';
 import {getTokenOrAuthHeader} from './authUtil';
+import {type IAsyncCache} from '@luolapeikko/cache-types';
 import {type ILoggerLike} from '@avanio/logger-like';
 import {IssuerCertLoader} from './issuerCertLoader';
 import {JwtHeaderError} from './JwtHeaderError';
@@ -26,11 +27,11 @@ let certLoaderInstance = new IssuerCertLoader();
 /**
  * Cache for resolved token payloads, default is in memory cache
  */
-let tokenCache: ICacheOrAsync<TokenPayload, RawJwtToken> = new ExpireCache<TokenPayload, RawJwtToken>();
+let tokenCache: IAsyncCache<TokenPayload, RawJwtToken> = new ExpireCache<TokenPayload, RawJwtToken>();
 /***
  * Setup token cache for verified payloads, on production this should be encrypted if persisted
  */
-export function setTokenCache(cache: ICacheOrAsync<TokenPayload, RawJwtToken>) {
+export function setTokenCache(cache: IAsyncCache<TokenPayload, RawJwtToken>) {
 	tokenCache = cache;
 }
 
@@ -45,7 +46,7 @@ export function useCache(cacheFunctions: CertCache) {
 	return certLoaderInstance.setCache(cacheFunctions);
 }
 
-export function testGetCache(): ICacheOrAsync<TokenPayload> {
+export function testGetCache(): IAsyncCache<TokenPayload> {
 	/* istanbul ignore else  */
 	if (process.env.NODE_ENV === 'testing') {
 		return tokenCache;
@@ -135,13 +136,15 @@ export async function jwtVerify<T extends object>(tokenOrBearer: string, options
 	return {body: verifiedDecode, isCached: false};
 }
 
+const bearerRegex = /^Bearer (.*?)$/;
+
 /**
  * Verify auth "Bearer" header against issuer public certs
  * @param authHeader raw authentication header with ^Bearer prefix
  * @param options jwt verify options
  */
 export function jwtBearerVerify<T extends object>(authHeader: string, options: jwt.VerifyOptions = {}): Promise<JwtResponse<T>> {
-	const match = authHeader.match(/^Bearer (.*?)$/);
+	const match = bearerRegex.exec(authHeader);
 	if (!match) {
 		throw new Error('No authentication header');
 	}

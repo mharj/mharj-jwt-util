@@ -32,12 +32,14 @@ export class TachyonCertCache extends CertCache {
 }
 
 export const certCacheStringSerializer: IPersistSerializer<CertRecords, string> = {
+	name: 'certCacheStringSerializer',
 	serialize: (certs: CertRecords): string => JSON.stringify(certs),
 	deserialize: (certs: string): CertRecords => JSON.parse(certs) as CertRecords,
 	validator: (certs: CertRecords): boolean => certRecordsSchema.safeParse(certs).success,
 };
 
 export const certCacheBufferSerializer: IPersistSerializer<CertRecords, Buffer> = {
+	name: 'certCacheBufferSerializer',
 	serialize: (certs: CertRecords): Buffer => Buffer.from(JSON.stringify(certs)),
 	deserialize: (certs: Buffer): CertRecords => JSON.parse(certs.toString()) as CertRecords,
 	validator: (certs: CertRecords): boolean => certRecordsSchema.safeParse(certs).success,

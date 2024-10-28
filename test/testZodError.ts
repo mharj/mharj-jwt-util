@@ -11,12 +11,14 @@ describe('zodUtils', () => {
 	describe('formatZodError', () => {
 		it('should build simple error with string from Zod Error', () => {
 			let error: Error | undefined;
-			try {
-				openIdConfigSchema.parse({});
-			} catch (e) {
-				error = formatZodError(e);
+			const result = openIdConfigSchema.safeParse({});
+			expect(result.success).to.be.eq(false);
+			if (!result.success) {
+				error = formatZodError(result.error);
+				expect(error?.message).to.be.equal('issuer: Required, jwks_uri: Required');
+			} else {
+				throw new Error('Zod validation should fail');
 			}
-			expect(error?.message).to.be.equal('issuer: Required, jwks_uri: Required');
 		});
 	});
 });

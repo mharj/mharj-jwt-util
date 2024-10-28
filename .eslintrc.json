@@ -32,7 +32,7 @@
 			{
 				"caseSensitive": false,
 				"natural": true,
-				"minKeys": 4
+				"minKeys": 5
 			}
 		],
 		"no-unused-vars": "off",
