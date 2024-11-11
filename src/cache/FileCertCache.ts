@@ -40,8 +40,10 @@ export class FileCertCache extends CertCache implements ISetOptionalLogger {
 		fs.watch(this.file, async (eventType) => {
 			if (this.updateCallback && eventType === 'change') {
 				this.logger?.debug('jwt-util FileCertCache:watch ()=> change');
-				const data = JSON.parse((await fs.promises.readFile(this.file)).toString()) as CertRecords;
-				this.handleUpdate(data);
+				if (fs.existsSync(this.file)) {
+					const data = JSON.parse((await fs.promises.readFile(this.file)).toString()) as CertRecords;
+					this.handleUpdate(data);
+				}
 			}
 		});
 	}
