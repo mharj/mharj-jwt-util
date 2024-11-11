@@ -1,6 +1,6 @@
 {
     "name": "mharj-jwt-util",
-    "version": "0.6.1",
+    "version": "0.6.2",
     "description": "JWT util",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
