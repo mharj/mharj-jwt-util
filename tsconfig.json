@@ -1,33 +1,28 @@
 {
 	"compilerOptions": {
-	  "module": "commonjs",
-	  "target": "es2021",
-	  "lib": ["ES2021", "dom"],
-	  "rootDir": "./src",
-	  "outDir": "./dist",
-	  "moduleResolution": "node",
-	  "sourceRoot": "./src",
-	  "types": ["node"],
-	  "declaration": true,
-	  "removeComments": false,
-	  "inlineSources": false,
-	  "inlineSourceMap": true,
-	  "forceConsistentCasingInFileNames": true,
-	  "noImplicitReturns": true,
-	  "noImplicitThis": true,
-	  "noImplicitAny": true,
-	  "importHelpers": false,
-	  "strictNullChecks": true,
-	  "noUnusedLocals": true,
-	  "strict": true,
-	  "esModuleInterop": true
+		"module": "commonjs",
+		"target": "es2021",
+		"lib": ["ES2021", "dom"],
+		"rootDir": "./src",
+		"outDir": "./dist",
+		"moduleResolution": "node",
+		"sourceRoot": "./src",
+		"types": ["node"],
+		"declaration": true,
+		"removeComments": false,
+		"inlineSources": false,
+		"inlineSourceMap": true,
+		"forceConsistentCasingInFileNames": true,
+		"noImplicitReturns": true,
+		"noImplicitThis": true,
+		"noImplicitAny": true,
+		"importHelpers": false,
+		"strictNullChecks": true,
+		"noUnusedLocals": true,
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
 	},
-	"ts-node": {
-		"swc": true
-	},
-	"exclude": [
-		"test/*",
-		"dist/*",
-		"node_modules/*"
-	]
- }
+	"exclude": ["test/", "dist/", "node_modules/"],
+	"include": ["src/"]
+}
