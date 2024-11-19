@@ -13,6 +13,11 @@ export class TachyonCertCache extends CertCache {
 	constructor(driver: IStorageDriver<CertRecords>) {
 		super();
 		this.driver = driver;
+		this.driver.on('update', (certs) => {
+			if (certs) {
+				this.handleUpdate(certs);
+			}
+		});
 	}
 
 	protected async init(): Promise<void> {

@@ -14,5 +14,6 @@ export default defineConfig({
 			reporter: ['text'],
 		},
 		include: ['test/**/*.test.ts'],
+		setupFiles: ['dotenv/config'],
 	},
 });

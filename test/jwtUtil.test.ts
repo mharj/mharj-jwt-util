@@ -1,7 +1,6 @@
 /* eslint-disable sort-imports, import/first, no-unused-expressions, sonarjs/no-duplicate-string */
 process.env.NODE_ENV = 'testing';
 import {afterAll, beforeAll, describe, expect, it} from 'vitest';
-import dotenv from 'dotenv';
 import fs from 'node:fs';
 import {sign as jwtSign, decode as jwtDecode, type JwtPayload, JsonWebTokenError} from 'jsonwebtoken';
 import {type CacheMap, TachyonExpireCache} from 'tachyon-expire-cache';
@@ -28,70 +27,12 @@ import {
 	useCache,
 } from '../src';
 import {z} from 'zod';
-import {type Credentials} from 'google-auth-library';
-import {google} from 'googleapis';
-
-dotenv.config();
+import {getAzureAccessToken} from './lib/azure';
+import {getGoogleIdToken} from './lib/google';
 
 let GOOGLE_ID_TOKEN: string;
 let AZURE_ACCESS_TOKEN: string;
 let icl: IssuerCertLoader;
-
-function azureMultilineEnvFix(input: string | undefined) {
-	if (input === undefined) {
-		return undefined;
-	}
-	return input.replace(/\\n/g, '\n');
-}
-
-async function getGoogleCredentials(): Promise<Credentials> {
-	const clientKey = azureMultilineEnvFix(process.env.GOOGLE_CLIENT_KEY);
-
-	const jwtClient = new google.auth.JWT(
-		process.env.GOOGLE_CLIENT_EMAIL,
-		undefined,
-		clientKey,
-		['openid', 'https://www.googleapis.com/auth/cloud-platform'],
-		undefined,
-	);
-	return jwtClient.authorize();
-}
-
-const getGoogleIdToken = async () => {
-	const body = JSON.stringify({
-		audience: process.env.GOOGLE_CLIENT_EMAIL,
-		delegates: [],
-		includeEmail: true,
-	});
-	const headers = new Headers();
-	headers.set('Authorization', 'Bearer ' + (await getGoogleCredentials()).access_token);
-	headers.set('Content-Type', 'application/json');
-	headers.set('Content-Length', '' + body.length);
-	const res = await fetch(`https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${process.env.GOOGLE_CLIENT_EMAIL}:generateIdToken`, {
-		body,
-		headers,
-		method: 'POST',
-	});
-	if (res.status !== 200) {
-		throw new Error('getGoogleIdToken code ' + res.status);
-	}
-	const data = await res.json();
-	return data.token;
-};
-
-const getAzureAccessToken = async () => {
-	// NOTE: Azure v2.0 accessToken is not atm valid JWT token (https://github.com/microsoft/azure-spring-boot/issues/476)
-	const body = `client_id=${process.env.AZ_CLIENT_ID}&client_secret=${process.env.AZ_CLIENT_SECRET}&grant_type=client_credentials&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default`;
-	const headers = new Headers();
-	headers.set('Content-Type', 'application/x-www-form-urlencoded');
-	headers.set('Content-Length', '' + body.length);
-	const res = await fetch(`https://login.microsoftonline.com/${process.env.AZ_TENANT_ID}/oauth2/token`, {method: 'POST', headers, body});
-	if (res.status !== 200) {
-		throw new Error('getAzureAccessToken code ' + res.status);
-	}
-	const data = await res.json();
-	return data.access_token;
-};
 
 function cachePayloadSchema<T>(data: z.Schema<T>) {
 	return z.object({
@@ -109,6 +50,8 @@ const bufferSerializer: IPersistSerializer<CacheMap<TokenPayload, RawJwtToken>, 
 const processor = new CryptoBufferProcessor(Buffer.from('some-secret-key'));
 const driver = new FileStorageDriver('TokenStorageDriver', {fileName: './tokenCache.aes'}, bufferSerializer, processor);
 const cache = new TachyonExpireCache<TokenPayload, RawJwtToken>('TachyonExpireCache', driver);
+
+let fileCertCache: FileCertCache;
 
 describe('jwtUtil', () => {
 	beforeAll(async function () {
@@ -152,7 +95,9 @@ describe('jwtUtil', () => {
 			if (fs.existsSync('./unitTestCache.json')) {
 				await fs.promises.unlink('./unitTestCache.json');
 			}
-			await useCache(new FileCertCache({fileName: './unitTestCache.json', pretty: true}));
+			fileCertCache = new FileCertCache({fileName: './unitTestCache.json', pretty: true});
+			fileCertCache.setLogger(undefined);
+			await useCache(fileCertCache);
 		});
 		it('Test Google IdToken', async function () {
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
@@ -222,6 +167,7 @@ describe('jwtUtil', () => {
 			if (fs.existsSync('./unitTestCache.json')) {
 				await fs.promises.unlink('./unitTestCache.json');
 			}
+			fileCertCache.close();
 		});
 	});
 	describe('tokens with TachyonCertCache', () => {
