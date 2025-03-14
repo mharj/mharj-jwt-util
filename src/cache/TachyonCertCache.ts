@@ -1,5 +1,5 @@
-import {type CertRecords, certRecordsSchema} from '../interfaces/CertRecords';
 import {type IPersistSerializer, type IStorageDriver} from 'tachyon-drive';
+import {type CertRecords, certRecordsSchema} from '../interfaces/CertRecords';
 import {CertCache} from './CertCache';
 
 const initialCerts: CertRecords = {

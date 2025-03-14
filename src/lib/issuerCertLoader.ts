@@ -1,15 +1,15 @@
-import {assertZodError, getError} from '.';
-import {type CertIssuerRecord, type CertRecords} from '../interfaces/CertRecords';
+import {posix as path} from 'path';
+import {URL} from 'url';
 import {ExpireCache, type ExpireCacheLogMapType} from '@avanio/expire-cache';
 import {type ILoggerLike, type ISetOptionalLogger} from '@avanio/logger-like';
+import {type CertCache} from '../cache/CertCache';
+import {type CertIssuerRecord, type CertRecords} from '../interfaces/CertRecords';
+import {type JsonWebKey} from '../interfaces/JsonWebKey';
 import {type OpenIdConfig, openIdConfigSchema} from '../interfaces/OpenIdConfig';
 import {type OpenIdConfigCerts, openIdConfigCertsSchema} from '../interfaces/OpenIdConfigCerts';
-import {type CertCache} from '../cache/CertCache';
-import {formatZodError} from './zodUtils';
-import {type JsonWebKey} from '../interfaces/JsonWebKey';
-import {posix as path} from 'path';
 import {rsaPublicKeyPem} from './rsaPublicKeyPem';
-import {URL} from 'url';
+import {formatZodError} from './zodUtils';
+import {assertZodError, getError} from '.';
 
 export type IssuerCertLoaderOptions = {
 	/**
@@ -38,7 +38,7 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 
 	public setLogger(logger: ILoggerLike | undefined) {
 		this.logger = logger;
-		this.configCache.setLogger(logger);
+		this.configCache.logger.setLogger(logger);
 	}
 
 	public async setCache(cache: CertCache) {

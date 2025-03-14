@@ -1,5 +1,6 @@
 import {type Credentials} from 'google-auth-library';
 import {google} from 'googleapis';
+import {z} from 'zod';
 
 export function multilineEnvFix(input: string | undefined) {
 	if (input === undefined) {
@@ -21,6 +22,10 @@ async function getGoogleCredentials(): Promise<Credentials> {
 	return jwtClient.authorize();
 }
 
+const parseJson = z.object({
+	token: z.string(),
+});
+
 export async function getGoogleIdToken() {
 	const body = JSON.stringify({
 		audience: process.env.GOOGLE_CLIENT_EMAIL,
@@ -39,6 +44,5 @@ export async function getGoogleIdToken() {
 	if (res.status !== 200) {
 		throw new Error('getGoogleIdToken code ' + res.status);
 	}
-	const data = await res.json();
-	return data.token;
+	return parseJson.parse(await res.json()).token;
 }

@@ -1,5 +1,5 @@
-import {jsonWebKeySchema} from './JsonWebKey';
 import {z} from 'zod';
+import {jsonWebKeySchema} from './JsonWebKey';
 
 /**
  * OpenId Configuration Certificates validation schema.

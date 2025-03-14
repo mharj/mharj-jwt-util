@@ -3,14 +3,6 @@ import {type CertRecords} from '../interfaces/CertRecords';
 export abstract class CertCache {
 	protected updateCallback: ((certs: CertRecords) => void) | undefined;
 	private ts: number | undefined;
-	protected abstract init(): void | Promise<void>;
-	protected abstract load(): CertRecords | Promise<CertRecords>;
-	protected abstract save(certs: CertRecords): void | Promise<void>;
-	protected handleUpdate(certs: CertRecords) {
-		if (this.updateCallback && certs._ts !== this.ts) {
-			this.updateCallback(certs);
-		}
-	}
 
 	public registerChangeCallback(callback: (certs: CertRecords) => void): void {
 		this.updateCallback = callback;
@@ -28,4 +20,14 @@ export abstract class CertCache {
 		this.ts = certs._ts;
 		return this.save(certs);
 	}
+
+	protected handleUpdate(certs: CertRecords) {
+		if (this.updateCallback && certs._ts !== this.ts) {
+			this.updateCallback(certs);
+		}
+	}
+
+	protected abstract init(): void | Promise<void>;
+	protected abstract load(): CertRecords | Promise<CertRecords>;
+	protected abstract save(certs: CertRecords): void | Promise<void>;
 }

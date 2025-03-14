@@ -7,8 +7,8 @@ export function rsaPublicKeyPem(modulusB64: string, exponentB64: string) {
 	let modulusHex = modulus.toString('hex');
 	let exponentHex = exponent.toString('hex');
 
-	modulusHex = prepadSigned(modulusHex);
-	exponentHex = prepadSigned(exponentHex);
+	modulusHex = prePadSigned(modulusHex);
+	exponentHex = prePadSigned(exponentHex);
 
 	const modlen = modulusHex.length / 2;
 	const explen = exponentHex.length / 2;
@@ -39,7 +39,7 @@ export function buildCertFrame(der: string | Buffer): Buffer | string {
 	return Buffer.from('-----BEGIN RSA PUBLIC KEY-----\r\n' + match.join('\r\n') + '\r\n-----END RSA PUBLIC KEY-----\r\n');
 }
 
-function prepadSigned(hexStr: string) {
+function prePadSigned(hexStr: string) {
 	const msb = hexStr[0];
 	if (msb < '0' || msb > '7') {
 		return '00' + hexStr;
@@ -64,7 +64,7 @@ function encodeLengthHex(n: number) {
 		return toHex(n);
 	} else {
 		const nHex = toHex(n);
-		const lengthOfLengthByte = 128 + nHex.length / 2; // 0x80+numbytes
+		const lengthOfLengthByte = 128 + nHex.length / 2; // 0x80+numberOfBytes
 		return toHex(lengthOfLengthByte) + nHex;
 	}
 }

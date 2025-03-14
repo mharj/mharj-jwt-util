@@ -1,6 +1,6 @@
 import * as fs from 'fs';
-import {type CertRecords, isCertRecords} from '../interfaces/CertRecords';
 import {type ILoggerLike, type ISetOptionalLogger} from '@avanio/logger-like';
+import {type CertRecords, isCertRecords} from '../interfaces/CertRecords';
 import {CertCache} from './CertCache';
 
 interface IProps {
@@ -29,6 +29,7 @@ export class FileCertCache extends CertCache implements ISetOptionalLogger {
 		this.logger?.info('jwt-util FileCertCache registered');
 		this.file = fileName ?? './certCache.json';
 		this.pretty = pretty ?? false;
+		this.handleUpdateCallback = this.handleUpdateCallback.bind(this);
 	}
 
 	public setLogger(logger: ILoggerLike | undefined) {
@@ -69,6 +70,7 @@ export class FileCertCache extends CertCache implements ISetOptionalLogger {
 				if (debounceTimeout) {
 					clearTimeout(debounceTimeout);
 				}
+				// eslint-disable-next-line @typescript-eslint/unbound-method
 				debounceTimeout = setTimeout(this.handleUpdateCallback, 100);
 			});
 		} catch (err) {
@@ -76,7 +78,7 @@ export class FileCertCache extends CertCache implements ISetOptionalLogger {
 		}
 	}
 
-	private async readCacheFile(): Promise<unknown | undefined> {
+	private async readCacheFile(): Promise<unknown> {
 		if (!fs.existsSync(this.file)) {
 			return undefined;
 		}
