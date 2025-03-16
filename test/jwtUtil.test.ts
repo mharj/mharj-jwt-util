@@ -1,13 +1,14 @@
 process.env.NODE_ENV = 'testing';
 import fs from 'node:fs';
 import {decode as jwtDecode, JsonWebTokenError, type Jwt, type JwtHeader, type JwtPayload, sign as jwtSign} from 'jsonwebtoken';
-import {type IPersistSerializer, MemoryStorageDriver} from 'tachyon-drive';
+import {MemoryStorageDriver} from 'tachyon-drive';
 import {CryptoBufferProcessor, FileStorageDriver} from 'tachyon-drive-node-fs';
-import {type CacheMap, TachyonExpireCache} from 'tachyon-expire-cache';
+import {TachyonExpireCache} from 'tachyon-expire-cache';
 import {afterAll, beforeAll, describe, expect, it} from 'vitest';
 import {z} from 'zod';
 import {
 	buildCertFrame,
+	buildTokenCacheBufferSerializer,
 	certCacheBufferSerializer,
 	certCacheStringSerializer,
 	FileCertCache,
@@ -33,19 +34,8 @@ let GOOGLE_ID_TOKEN: string;
 let AZURE_ACCESS_TOKEN: string;
 let icl: IssuerCertLoader;
 
-function cachePayloadSchema<T>(data: z.Schema<T>) {
-	return z.object({
-		data,
-		expires: z.number().optional(),
-	});
-}
 const anyObjectSchema = z.object({}).passthrough(); // or build token payload schema
-const bufferSerializer: IPersistSerializer<CacheMap<TokenPayload, RawJwtToken>, Buffer> = {
-	name: 'bufferSerializer',
-	serialize: (data: CacheMap<TokenPayload, RawJwtToken>) => Buffer.from(JSON.stringify(Array.from(data))),
-	deserialize: (buffer: Buffer) => new Map(JSON.parse(buffer.toString())),
-	validator: (data: CacheMap<TokenPayload, RawJwtToken>) => z.map(z.string(), cachePayloadSchema(anyObjectSchema)).safeParse(data).success,
-};
+const bufferSerializer = buildTokenCacheBufferSerializer(anyObjectSchema);
 const processor = new CryptoBufferProcessor(Buffer.from('some-secret-key'));
 const driver = new FileStorageDriver('TokenStorageDriver', {fileName: './tokenCache.aes'}, bufferSerializer, processor);
 const cache = new TachyonExpireCache<TokenPayload, RawJwtToken>('TachyonExpireCache', driver);
