@@ -9,14 +9,14 @@ importers:
   .:
     devDependencies:
       '@avanio/auth-header':
-        specifier: ^0.0.4
-        version: 0.0.4
+        specifier: ^0.0.5
+        version: 0.0.5
       '@avanio/expire-cache':
-        specifier: ^0.6.7
-        version: 0.6.7(@avanio/logger-like@0.2.11)(@luolapeikko/cache-types@0.0.8)
+        specifier: ^0.6.9
+        version: 0.6.9(@avanio/logger-like@0.2.12)(@luolapeikko/cache-types@0.0.9)
       '@avanio/logger-like':
-        specifier: ^0.2.11
-        version: 0.2.11
+        specifier: ^0.2.12
+        version: 0.2.12
       '@cspell/eslint-plugin':
         specifier: ^8.17.5
         version: 8.17.5(eslint@9.22.0)
@@ -24,8 +24,8 @@ importers:
         specifier: ^9.22.0
         version: 9.22.0
       '@luolapeikko/cache-types':
-        specifier: ^0.0.8
-        version: 0.0.8
+        specifier: ^0.0.9
+        version: 0.0.9
       '@stylistic/eslint-plugin':
         specifier: ^4.2.0
         version: 4.2.0(eslint@9.22.0)(typescript@5.8.2)
@@ -33,8 +33,8 @@ importers:
         specifier: ^4.2.0
         version: 4.2.0(eslint@9.22.0)(typescript@5.8.2)
       '@types/jsonwebtoken':
-        specifier: ^9.0.9
-        version: 9.0.9
+        specifier: ^9.0.10
+        version: 9.0.10
       '@types/node':
         specifier: ^22.13.10
         version: 22.13.10
@@ -78,8 +78,8 @@ importers:
         specifier: ^146.0.0
         version: 146.0.0
       jsonwebtoken:
-        specifier: ^9.0.2
-        version: 9.0.2
+        specifier: ^9.0.3
+        version: 9.0.3
       prettier:
         specifier: ^3.5.3
         version: 3.5.3
@@ -88,13 +88,13 @@ importers:
         version: 0.5.21
       tachyon-drive:
         specifier: ^0.11.3
-        version: 0.11.3(@avanio/logger-like@0.2.11)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8)
+        version: 0.11.3(@avanio/logger-like@0.2.12)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8)
       tachyon-drive-node-fs:
         specifier: ^0.11.0
-        version: 0.11.0(@avanio/logger-like@0.2.11)(tachyon-drive@0.11.3(@avanio/logger-like@0.2.11)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8))
+        version: 0.11.0(@avanio/logger-like@0.2.12)(tachyon-drive@0.11.3(@avanio/logger-like@0.2.12)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8))
       tachyon-expire-cache:
         specifier: ^0.11.0
-        version: 0.11.0(@avanio/logger-like@0.2.11)(@luolapeikko/cache-types@0.0.8)(@luolapeikko/ts-common@0.2.8)(tachyon-drive@0.11.3(@avanio/logger-like@0.2.11)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8))
+        version: 0.11.0(@avanio/logger-like@0.2.12)(@luolapeikko/cache-types@0.0.9)(@luolapeikko/ts-common@0.2.8)(tachyon-drive@0.11.3(@avanio/logger-like@0.2.12)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8))
       tsup:
         specifier: ^8.4.0
         version: 8.4.0(@swc/core@1.9.2)(postcss@8.5.3)(typescript@5.8.2)(yaml@2.7.0)
@@ -120,17 +120,17 @@ packages:
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
     engines: {node: '>=6.0.0'}
 
-  '@avanio/auth-header@0.0.4':
-    resolution: {integrity: sha512-Qnz1wkeDpaJKfe0vkX0nD6sYdZWNjrhSgl9Yy+3FwsPFzKFlXlx8cQTCoefuWso8k3XNRVAwiL+BUtCTEv6VZg==}
+  '@avanio/auth-header@0.0.5':
+    resolution: {integrity: sha512-YXtULAi4lGsRppKMrfVkSLtSQI9kagxLzcvYZgR1goaKzoYhaEZhWv+uhwDfIb4uKyUUqs2UjGPRHjF+PFYQFg==}
 
-  '@avanio/expire-cache@0.6.7':
-    resolution: {integrity: sha512-cSh2sRwIZY9/zoZtirOPxCT3nsKAbn2WcTsBEXR4s3y793vaFO9AGGZfCw+CYZs3wqJHsQ4N117XgrYcZStgEA==}
+  '@avanio/expire-cache@0.6.9':
+    resolution: {integrity: sha512-kAePDtzzJrFMGsZ1yMoH9j3C66D2Gdk67zqSeBa5o2DhU+igExTJmwoN+FErkZQceO+ZetAy0Y1gTukUQZCaew==}
     peerDependencies:
-      '@avanio/logger-like': ^0.2.10
-      '@luolapeikko/cache-types': ^0.0.8
+      '@avanio/logger-like': '>= 0.2.10'
+      '@luolapeikko/cache-types': '>= 0.0.8'
 
-  '@avanio/logger-like@0.2.11':
-    resolution: {integrity: sha512-H7r9WE8HK43p5xd0nTlQ9mjhOrvfr8NDPQP09SlG7te1m6+JMj4IjzyyXY/2PoW7uBRkV9LRxzbjhKOmrdmmhQ==}
+  '@avanio/logger-like@0.2.12':
+    resolution: {integrity: sha512-XoIRKMBtYmva8ElpC5ccr6JkD2WBzVMV4qTcdTFPNkCAf524IET2mcm923PwfoLinDwEuty08sSEtcsoq68+Lw==}
 
   '@babel/helper-string-parser@7.25.9':
     resolution: {integrity: sha512-4A/SCr/2KLd5jrtOMFzaKjVtAei3+2r/NChoBNoZ3EyP/+GlhoaEGoWOZUmFmoITP7zOJyHIMm+DYRd8o3PvHA==}
@@ -608,8 +608,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
 
-  '@luolapeikko/cache-types@0.0.8':
-    resolution: {integrity: sha512-bfpZbkEhQMBJnVBt2sNRik0o/lhmsKTvz6NMc2ujsffM1ZUm4YTjESnsPKdX6XrMV2Kz31UDHP+d4iUqVSQuaA==}
+  '@luolapeikko/cache-types@0.0.9':
+    resolution: {integrity: sha512-MV6kUFsyd5xiE6Bwjd9GXazo4/kCHcvJoMe7nnLPx9jdjKnDE9dhboMOfFMoZfD5Ea5LO8XNZuNo7XMSoDImPQ==}
 
   '@luolapeikko/result-option@1.0.3':
     resolution: {integrity: sha512-Quq+b6ERUIwCIVvfSW+QQ6w+CNjb2IUkkitAWgpfbBNFrelJV0cI21AlGo6HAcTneNznnoW5To+gxxtLytod+A==}
@@ -838,8 +838,8 @@ packages:
   '@types/json5@0.0.29':
     resolution: {integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==}
 
-  '@types/jsonwebtoken@9.0.9':
-    resolution: {integrity: sha512-uoe+GxEuHbvy12OUQct2X9JenKM3qAscquYymuQN4fMWG9DBQtykrQEFcAbVACF7qaLw9BePSodUL0kquqBJpQ==}
+  '@types/jsonwebtoken@9.0.10':
+    resolution: {integrity: sha512-asx5hIG9Qmf/1oStypjanR7iKTv0gXQ1Ov/jfrX6kS/EO0OFni8orbmGCn0672NHR3kXHwpAwR+B368ZGN/2rA==}
 
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
@@ -1791,25 +1791,25 @@ packages:
     resolution: {integrity: sha512-g1MWMLBiz8FKi1e4w0UyVL3w+iJceWAFBAaBnnGKOpNa5f8TLktkbre1+s6oICydWAm+HRUGTmI+//xv2hvXYA==}
     hasBin: true
 
-  jsonwebtoken@9.0.2:
-    resolution: {integrity: sha512-PRp66vJ865SSqOlgqS8hujT5U4AOgMfhrwYIuIhfKaoSCZcirrmASQr8CX7cUg+RMih+hgznrjp99o+W4pJLHQ==}
+  jsonwebtoken@9.0.3:
+    resolution: {integrity: sha512-MT/xP0CrubFRNLNKvxJ2BYfy53Zkm++5bX9dtuPbqAeQpTVe0MQTFhao8+Cp//EmJp244xt6Drw/GVEGCUj40g==}
     engines: {node: '>=12', npm: '>=6'}
 
   jsx-ast-utils@3.3.5:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
     engines: {node: '>=4.0'}
 
-  jwa@1.4.1:
-    resolution: {integrity: sha512-qiLX/xhEEFKUAJ6FiBMbes3w9ATzyk5W7Hvzpa/SLYdxNtng+gcurvrI7TbACjIXlsJyr05/S1oUhZrc63evQA==}
-
   jwa@2.0.0:
     resolution: {integrity: sha512-jrZ2Qx916EA+fq9cEAeCROWPTfCwi1IVHqT2tapuqLEVVDKFDENFw1oL+MwrTvH6msKxsd1YTDVw6uKEcsrLEA==}
 
-  jws@3.2.2:
-    resolution: {integrity: sha512-YHlZCB6lMTllWDtSPHz/ZXTsi8S00usEV6v1tjq8tOUZzw7DpSDWVXjXDre6ed1w/pd495ODpHZYSdkRTsa0HA==}
+  jwa@2.0.1:
+    resolution: {integrity: sha512-hRF04fqJIP8Abbkq5NKGN0Bbr3JxlQ+qhZufXVr0DvujKy93ZCbXZMHDL4EOtodSbCWxOqR8MS1tXA5hwqCXDg==}
 
   jws@4.0.0:
     resolution: {integrity: sha512-KDncfTmOZoOMTFG4mBlG0qUIOlc03fmzH+ru6RgYVZhPkyiy/92Owlt/8UEN+a4TXR1FQetfIpJE8ApdvdVxTg==}
+
+  jws@4.0.1:
+    resolution: {integrity: sha512-EKI/M/yqPncGUUh44xz0PxSidXFr/+r0pA70+gIYhjv+et7yxM+s29Y+VGDkovRofQem0fs7Uvf4+YmAdyRduA==}
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -2594,14 +2594,14 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.8
       '@jridgewell/trace-mapping': 0.3.25
 
-  '@avanio/auth-header@0.0.4': {}
+  '@avanio/auth-header@0.0.5': {}
 
-  '@avanio/expire-cache@0.6.7(@avanio/logger-like@0.2.11)(@luolapeikko/cache-types@0.0.8)':
+  '@avanio/expire-cache@0.6.9(@avanio/logger-like@0.2.12)(@luolapeikko/cache-types@0.0.9)':
     dependencies:
-      '@avanio/logger-like': 0.2.11
-      '@luolapeikko/cache-types': 0.0.8
+      '@avanio/logger-like': 0.2.12
+      '@luolapeikko/cache-types': 0.0.9
 
-  '@avanio/logger-like@0.2.11': {}
+  '@avanio/logger-like@0.2.12': {}
 
   '@babel/helper-string-parser@7.25.9': {}
 
@@ -2993,7 +2993,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@luolapeikko/cache-types@0.0.8': {}
+  '@luolapeikko/cache-types@0.0.9': {}
 
   '@luolapeikko/result-option@1.0.3': {}
 
@@ -3162,7 +3162,7 @@ snapshots:
 
   '@types/json5@0.0.29': {}
 
-  '@types/jsonwebtoken@9.0.9':
+  '@types/jsonwebtoken@9.0.10':
     dependencies:
       '@types/ms': 2.1.0
       '@types/node': 22.13.10
@@ -4349,9 +4349,9 @@ snapshots:
     dependencies:
       minimist: 1.2.8
 
-  jsonwebtoken@9.0.2:
+  jsonwebtoken@9.0.3:
     dependencies:
-      jws: 3.2.2
+      jws: 4.0.1
       lodash.includes: 4.3.0
       lodash.isboolean: 3.0.3
       lodash.isinteger: 4.0.4
@@ -4369,26 +4369,26 @@ snapshots:
       object.assign: 4.1.7
       object.values: 1.2.1
 
-  jwa@1.4.1:
-    dependencies:
-      buffer-equal-constant-time: 1.0.1
-      ecdsa-sig-formatter: 1.0.11
-      safe-buffer: 5.2.1
-
   jwa@2.0.0:
     dependencies:
       buffer-equal-constant-time: 1.0.1
       ecdsa-sig-formatter: 1.0.11
       safe-buffer: 5.2.1
 
-  jws@3.2.2:
+  jwa@2.0.1:
     dependencies:
-      jwa: 1.4.1
+      buffer-equal-constant-time: 1.0.1
+      ecdsa-sig-formatter: 1.0.11
       safe-buffer: 5.2.1
 
   jws@4.0.0:
     dependencies:
       jwa: 2.0.0
+      safe-buffer: 5.2.1
+
+  jws@4.0.1:
+    dependencies:
+      jwa: 2.0.1
       safe-buffer: 5.2.1
 
   keyv@4.5.4:
@@ -4861,24 +4861,24 @@ snapshots:
       '@pkgr/core': 0.1.1
       tslib: 2.8.1
 
-  tachyon-drive-node-fs@0.11.0(@avanio/logger-like@0.2.11)(tachyon-drive@0.11.3(@avanio/logger-like@0.2.11)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8)):
+  tachyon-drive-node-fs@0.11.0(@avanio/logger-like@0.2.12)(tachyon-drive@0.11.3(@avanio/logger-like@0.2.12)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8)):
     dependencies:
-      '@avanio/logger-like': 0.2.11
+      '@avanio/logger-like': 0.2.12
       '@luolapeikko/ts-common': 0.2.8
-      tachyon-drive: 0.11.3(@avanio/logger-like@0.2.11)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8)
+      tachyon-drive: 0.11.3(@avanio/logger-like@0.2.12)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8)
 
-  tachyon-drive@0.11.3(@avanio/logger-like@0.2.11)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8):
+  tachyon-drive@0.11.3(@avanio/logger-like@0.2.12)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8):
     dependencies:
-      '@avanio/logger-like': 0.2.11
+      '@avanio/logger-like': 0.2.12
       '@luolapeikko/result-option': 1.0.3
       '@luolapeikko/ts-common': 0.2.8
 
-  tachyon-expire-cache@0.11.0(@avanio/logger-like@0.2.11)(@luolapeikko/cache-types@0.0.8)(@luolapeikko/ts-common@0.2.8)(tachyon-drive@0.11.3(@avanio/logger-like@0.2.11)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8)):
+  tachyon-expire-cache@0.11.0(@avanio/logger-like@0.2.12)(@luolapeikko/cache-types@0.0.9)(@luolapeikko/ts-common@0.2.8)(tachyon-drive@0.11.3(@avanio/logger-like@0.2.12)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8)):
     dependencies:
-      '@avanio/logger-like': 0.2.11
-      '@luolapeikko/cache-types': 0.0.8
+      '@avanio/logger-like': 0.2.12
+      '@luolapeikko/cache-types': 0.0.9
       '@luolapeikko/ts-common': 0.2.8
-      tachyon-drive: 0.11.3(@avanio/logger-like@0.2.11)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8)
+      tachyon-drive: 0.11.3(@avanio/logger-like@0.2.12)(@luolapeikko/result-option@1.0.3)(@luolapeikko/ts-common@0.2.8)
 
   tapable@2.2.1: {}
 
