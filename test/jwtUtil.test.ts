@@ -48,7 +48,7 @@ type AsymmetricJwt = {
 	signature: string;
 };
 
-export function isAsymmetricJwt(data: Jwt | undefined | null): asserts data is AsymmetricJwt {
+function isAsymmetricJwt(data: Jwt | undefined | null): asserts data is AsymmetricJwt {
 	if (!data) {
 		throw Error('not valid AsymmetricJwt');
 	}
@@ -96,7 +96,9 @@ describe('jwtUtil', () => {
 		});
 		it('should not load issuer certs if not allowed', async () => {
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
-			await expect(jwtVerify(GOOGLE_ID_TOKEN, {issuer: []})).rejects.toEqual(new JwtHeaderError('token header: issuer is not valid'));
+			await expect(jwtVerify(GOOGLE_ID_TOKEN, {issuer: [] as unknown as [string, ...string[]]})).rejects.toEqual(
+				new JwtHeaderError('token header: issuer is not valid'),
+			);
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
 		});
 	});
