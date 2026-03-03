@@ -11,7 +11,11 @@ export function multilineEnvFix(input: string | undefined) {
 
 function getGoogleCredentials(): Promise<Credentials> {
 	const clientKey = multilineEnvFix(process.env.GOOGLE_CLIENT_KEY);
-	const jwtClient = new google.auth.JWT({email: process.env.GOOGLE_CLIENT_EMAIL, key: clientKey, scopes: ['openid', 'https://www.googleapis.com/auth/cloud-platform']});
+	const jwtClient = new google.auth.JWT({
+		email: process.env.GOOGLE_CLIENT_EMAIL,
+		key: clientKey,
+		scopes: ['openid', 'https://www.googleapis.com/auth/cloud-platform'],
+	});
 	return jwtClient.authorize();
 }
 
