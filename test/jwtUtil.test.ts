@@ -1,6 +1,8 @@
 process.env.NODE_ENV = 'testing';
+
 import fs from 'node:fs';
-import {decode as jwtDecode, JsonWebTokenError, type Jwt, type JwtHeader, type JwtPayload, sign as jwtSign} from 'jsonwebtoken';
+import type {StandardSchemaV1} from '@standard-schema/spec';
+import {JsonWebTokenError, type Jwt, type JwtHeader, type JwtPayload, decode as jwtDecode, sign as jwtSign} from 'jsonwebtoken';
 import {MemoryStorageDriver} from 'tachyon-drive';
 import {CryptoBufferProcessor, FileStorageDriver} from 'tachyon-drive-node-fs';
 import {TachyonExpireCache} from 'tachyon-expire-cache';
@@ -9,22 +11,24 @@ import {z} from 'zod';
 import {
 	buildCertFrame,
 	buildTokenCacheBufferSerializer,
+	type CertRecords,
 	certCacheBufferSerializer,
 	certCacheStringSerializer,
 	FileCertCache,
 	IssuerCertLoader,
+	isRawJwtToken,
+	JwtHeaderError,
 	jwtBearerVerify,
 	jwtDeleteKid,
 	jwtHaveIssuer,
-	JwtHeaderError,
 	jwtVerify,
 	jwtVerifyPromise,
 	type RawJwtToken,
 	setCertLoader,
 	setTokenCache,
 	TachyonCertCache,
-	testGetCache,
 	type TokenPayload,
+	testGetCache,
 	useCache,
 } from '../src';
 import {getAzureAccessToken} from './lib/azure';
@@ -34,11 +38,17 @@ let GOOGLE_ID_TOKEN: string;
 let AZURE_ACCESS_TOKEN: string;
 let icl: IssuerCertLoader;
 
-const anyObjectSchema = z.object({}).passthrough(); // or build token payload schema
-const bufferSerializer = buildTokenCacheBufferSerializer(anyObjectSchema);
+const tokenBodySchema = z.object({}).loose(); // or build token payload schema
+const tokenCacheMapSchema = z.map(z.string().refine(isRawJwtToken), z.object({expires: z.number(), data: tokenBodySchema}));
+const bufferSerializer = buildTokenCacheBufferSerializer(tokenCacheMapSchema);
 const processor = new CryptoBufferProcessor(Buffer.from('some-secret-key'));
-const driver = new FileStorageDriver('TokenStorageDriver', {fileName: './tokenCache.aes'}, bufferSerializer, processor);
-const cache = new TachyonExpireCache<TokenPayload, RawJwtToken>('TachyonExpireCache', driver);
+const driver = new FileStorageDriver({name: 'TokenStorageDriver', fileName: './tokenCache.aes'}, bufferSerializer, processor);
+const cache = new TachyonExpireCache<z.infer<typeof tokenBodySchema>, RawJwtToken>({name: 'TachyonExpireCache'}, driver);
+
+const certCacheSchema = z.object({certs: z.record(z.string(), z.record(z.string(), z.string())), _ts: z.number()}) satisfies StandardSchemaV1<
+	unknown,
+	CertRecords
+>;
 
 let fileCertCache: FileCertCache;
 
@@ -67,7 +77,7 @@ function isAsymmetricJwt(data: Jwt | undefined | null): asserts data is Asymmetr
 }
 
 describe('jwtUtil', () => {
-	beforeAll(async function () {
+	beforeAll(async () => {
 		[AZURE_ACCESS_TOKEN, GOOGLE_ID_TOKEN] = await Promise.all([getAzureAccessToken(), getGoogleIdToken()]);
 	});
 	describe('jwtVerifyPromise', () => {
@@ -109,11 +119,15 @@ describe('jwtUtil', () => {
 			if (fs.existsSync('./unitTestCache.json')) {
 				await fs.promises.unlink('./unitTestCache.json');
 			}
-			fileCertCache = new FileCertCache({fileName: './unitTestCache.json', pretty: true});
+			fileCertCache = new FileCertCache({
+				fileName: './unitTestCache.json',
+				pretty: true,
+				schema: certCacheSchema,
+			});
 			fileCertCache.setLogger(undefined);
 			await useCache(fileCertCache);
 		});
-		it('Test Google IdToken', async function () {
+		it('Test Google IdToken', async () => {
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
 			expect(body).not.to.be.eq(null);
@@ -125,13 +139,13 @@ describe('jwtUtil', () => {
 			expect(body).not.to.be.eq(null);
 			expect(isCached).to.be.eq(true);
 		});
-		it('Test jwt cache speed (jwt 100 times)', async function () {
+		it('Test jwt cache speed (jwt 100 times)', async () => {
 			for (let i = 0; i < 100; i++) {
 				await jwtVerify(GOOGLE_ID_TOKEN);
 			}
 		});
 		it('Test Google token as Bearer Token', async () => {
-			const {body, isCached} = await jwtBearerVerify<{test?: string}>('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
+			const {body, isCached} = await jwtBearerVerify<{test?: string}>(`Bearer ${GOOGLE_ID_TOKEN}`, {issuer: ['https://accounts.google.com']});
 			expect(body).not.to.be.eq(undefined);
 			expect(body.aud).not.to.be.eq(undefined);
 			expect(body.exp).not.to.be.eq(undefined);
@@ -160,7 +174,7 @@ describe('jwtUtil', () => {
 		});
 		it('Test non-valid issuer', async () => {
 			try {
-				await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['not_valid_issuer']});
+				await jwtBearerVerify(`Bearer ${GOOGLE_ID_TOKEN}`, {issuer: ['not_valid_issuer']});
 				throw new Error("should not happen as we don't have parameters");
 			} catch (_err) {
 				// ok
@@ -171,10 +185,10 @@ describe('jwtUtil', () => {
 			isAsymmetricJwt(decoded);
 			jwtDeleteKid(decoded.payload.iss, decoded.header.kid);
 			jwtDeleteKid('test', decoded.header.kid);
-			const decode = await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
+			const decode = await jwtBearerVerify(`Bearer ${GOOGLE_ID_TOKEN}`, {issuer: ['https://accounts.google.com']});
 			expect(decode).not.to.be.eq(null);
 		});
-		it('test Azure ID Token ', async function () {
+		it('test Azure ID Token ', async () => {
 			const decode = await jwtVerify(`Bearer ${AZURE_ACCESS_TOKEN}`);
 			expect(decode).not.to.be.eq(null);
 		});
@@ -194,9 +208,13 @@ describe('jwtUtil', () => {
 				await fs.promises.unlink('./unitTestCache.json');
 			}
 			setTokenCache(cache);
-			await useCache(new TachyonCertCache(new FileStorageDriver('FileCertCacheDriver', {fileName: './unitTestCache.json'}, certCacheBufferSerializer)));
+			await useCache(
+				new TachyonCertCache(
+					new FileStorageDriver({name: 'FileCertCacheDriver', fileName: './unitTestCache.json'}, certCacheBufferSerializer(certCacheSchema)),
+				),
+			);
 		});
-		it('Test Google IdToken', async function () {
+		it('Test Google IdToken', async () => {
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
 			expect(body).not.to.be.eq(null);
@@ -204,18 +222,18 @@ describe('jwtUtil', () => {
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(true);
 		});
 		it('Test Google IdToken cached', async () => {
-			setTokenCache(new TachyonExpireCache<TokenPayload, RawJwtToken>('TachyonExpireCache', driver)); // rebuild new cache
+			setTokenCache(new TachyonExpireCache<TokenPayload, RawJwtToken>({name: 'TachyonExpireCache'}, driver)); // rebuild new cache
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN);
 			expect(body).not.to.be.eq(null);
 			expect(isCached).to.be.eq(true);
 		});
-		it('Test jwt cache speed (jwt 100 times)', async function () {
+		it('Test jwt cache speed (jwt 100 times)', async () => {
 			for (let i = 0; i < 100; i++) {
 				await jwtVerify(GOOGLE_ID_TOKEN);
 			}
 		});
 		it('Test Google token as Bearer Token', async () => {
-			const {body, isCached} = await jwtBearerVerify<{test?: string}>('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
+			const {body, isCached} = await jwtBearerVerify<{test?: string}>(`Bearer ${GOOGLE_ID_TOKEN}`, {issuer: ['https://accounts.google.com']});
 			expect(body).not.to.be.eq(undefined);
 			expect(body.aud).not.to.be.eq(undefined);
 			expect(body.exp).not.to.be.eq(undefined);
@@ -244,7 +262,7 @@ describe('jwtUtil', () => {
 		});
 		it('Test non-valid issuer', async () => {
 			try {
-				await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['not_valid_issuer']});
+				await jwtBearerVerify(`Bearer ${GOOGLE_ID_TOKEN}`, {issuer: ['not_valid_issuer']});
 				throw new Error("should not happen as we don't have parameters");
 			} catch (_err) {
 				// ok
@@ -255,10 +273,10 @@ describe('jwtUtil', () => {
 			isAsymmetricJwt(decoded);
 			jwtDeleteKid(decoded.payload.iss, decoded.header.kid);
 			jwtDeleteKid('test', decoded.header.kid);
-			const decode = await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
+			const decode = await jwtBearerVerify(`Bearer ${GOOGLE_ID_TOKEN}`, {issuer: ['https://accounts.google.com']});
 			expect(decode).not.to.be.eq(null);
 		});
-		it('test Azure ID Token ', async function () {
+		it('test Azure ID Token ', async () => {
 			const decode = await jwtVerify(`Bearer ${AZURE_ACCESS_TOKEN}`);
 			expect(decode).not.to.be.eq(null);
 		});
@@ -274,9 +292,9 @@ describe('jwtUtil', () => {
 			await driver.clear(); // clear token cache
 			await testGetCache().clear();
 			setCertLoader(new IssuerCertLoader());
-			await useCache(new TachyonCertCache(new MemoryStorageDriver('MemoryCertCacheDriver', certCacheStringSerializer, null)));
+			await useCache(new TachyonCertCache(new MemoryStorageDriver({name: 'MemoryCertCacheDriver'}, certCacheStringSerializer(certCacheSchema), null)));
 		});
-		it('Test Google IdToken', async function () {
+		it('Test Google IdToken', async () => {
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(false);
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
 			expect(body).not.to.be.eq(null);
@@ -284,18 +302,18 @@ describe('jwtUtil', () => {
 			expect(jwtHaveIssuer('https://accounts.google.com')).to.be.eq(true);
 		});
 		it('Test Google IdToken cached', async () => {
-			setTokenCache(new TachyonExpireCache<TokenPayload, RawJwtToken>('TachyonExpireCache', driver)); // rebuild new cache
+			setTokenCache(new TachyonExpireCache<TokenPayload, RawJwtToken>({name: 'TachyonExpireCache'}, driver)); // rebuild new cache
 			const {body, isCached} = await jwtVerify(GOOGLE_ID_TOKEN);
 			expect(body).not.to.be.eq(null);
 			expect(isCached).to.be.eq(true);
 		});
-		it('Test jwt cache speed (jwt 100 times)', async function () {
+		it('Test jwt cache speed (jwt 100 times)', async () => {
 			for (let i = 0; i < 100; i++) {
 				await jwtVerify(GOOGLE_ID_TOKEN);
 			}
 		});
 		it('Test Google token as Bearer Token', async () => {
-			const {body, isCached} = await jwtBearerVerify<{test?: string}>('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
+			const {body, isCached} = await jwtBearerVerify<{test?: string}>(`Bearer ${GOOGLE_ID_TOKEN}`, {issuer: ['https://accounts.google.com']});
 			expect(body).not.to.be.eq(undefined);
 			expect(body.aud).not.to.be.eq(undefined);
 			expect(body.exp).not.to.be.eq(undefined);
@@ -324,7 +342,7 @@ describe('jwtUtil', () => {
 		});
 		it('Test non-valid issuer', async () => {
 			try {
-				await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['not_valid_issuer']});
+				await jwtBearerVerify(`Bearer ${GOOGLE_ID_TOKEN}`, {issuer: ['not_valid_issuer']});
 				throw new Error("should not happen as we don't have parameters");
 			} catch (_err) {
 				// ok
@@ -335,10 +353,10 @@ describe('jwtUtil', () => {
 			isAsymmetricJwt(decoded);
 			jwtDeleteKid(decoded.payload.iss, decoded.header.kid);
 			jwtDeleteKid('test', decoded.header.kid);
-			const decode = await jwtBearerVerify('Bearer ' + GOOGLE_ID_TOKEN, {issuer: ['https://accounts.google.com']});
+			const decode = await jwtBearerVerify(`Bearer ${GOOGLE_ID_TOKEN}`, {issuer: ['https://accounts.google.com']});
 			expect(decode).not.to.be.eq(null);
 		});
-		it('test Azure ID Token ', async function () {
+		it('test Azure ID Token ', async () => {
 			const decode = await jwtVerify(`Bearer ${AZURE_ACCESS_TOKEN}`);
 			expect(decode).not.to.be.eq(null);
 		});
@@ -347,7 +365,7 @@ describe('jwtUtil', () => {
 		beforeAll(() => {
 			icl = new IssuerCertLoader();
 		});
-		it('should throw if issuer is not found (hostname error)', async function () {
+		it('should throw if issuer is not found (hostname error)', async () => {
 			await expect(icl.getCert('https://123qweasdqwe123zzz/uuaaakkk/', 'unknown')).rejects.toEqual(
 				new Error('pullIssuerCerts https://123qweasdqwe123zzz/uuaaakkk/ fetch failed'),
 			);

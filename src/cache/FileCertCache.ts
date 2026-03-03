@@ -1,11 +1,13 @@
+import type {ILoggerLike, ISetOptionalLogger} from '@avanio/logger-like';
 import * as fs from 'fs';
-import {type ILoggerLike, type ISetOptionalLogger} from '@avanio/logger-like';
-import {type CertRecords, isCertRecords} from '../interfaces/CertRecords';
+import type {CertRecords, CertRecordsSchema} from '../interfaces/CertRecords';
 import {CertCache} from './CertCache';
 
-interface IProps {
+interface FileCertCacheProps {
 	fileName?: string;
 	pretty?: boolean;
+	schema: CertRecordsSchema;
+	logger?: ILoggerLike;
 }
 
 const initialCerts: CertRecords = {
@@ -15,6 +17,11 @@ const initialCerts: CertRecords = {
 
 /**
  * FileCertCache is a CertCache implementation that stores the JWT cert records in a file.
+ * @since v0.8.0
+ * @category CertCache
+ * @example
+ * const certCacheSchema = z.object({certs: z.record(z.string(), z.record(z.string(), z.string())), _ts: z.number()}) satisfies CertRecordsSchema;
+ * await useCache(new FileCertCache({fileName: './certCache.json', schema: certCacheSchema}));
  */
 export class FileCertCache extends CertCache implements ISetOptionalLogger {
 	private file: string;
@@ -22,13 +29,15 @@ export class FileCertCache extends CertCache implements ISetOptionalLogger {
 	private logger: ILoggerLike | undefined;
 	private watcher: fs.FSWatcher | undefined;
 	private currentTimestamp = initialCerts._ts;
+	private schema: CertRecordsSchema;
 
-	constructor({fileName, pretty}: IProps = {}, logger?: ILoggerLike) {
+	public constructor({fileName, pretty, schema, logger}: FileCertCacheProps) {
 		super();
 		this.logger = logger;
 		this.logger?.info('jwt-util FileCertCache registered');
 		this.file = fileName ?? './certCache.json';
 		this.pretty = pretty ?? false;
+		this.schema = schema;
 		this.handleUpdateCallback = this.handleUpdateCallback.bind(this);
 	}
 
@@ -54,7 +63,11 @@ export class FileCertCache extends CertCache implements ISetOptionalLogger {
 	protected async load(): Promise<CertRecords> {
 		this.logger?.debug('jwt-util FileCertCache:load()');
 		const data = await this.readCacheFile();
-		return isCertRecords(data) ? data : initialCerts;
+		const validateResult = await this.schema['~standard'].validate(data);
+		if (validateResult.issues) {
+			return initialCerts;
+		}
+		return validateResult.value;
 	}
 
 	protected save(certs: CertRecords): Promise<void> {
@@ -89,7 +102,7 @@ export class FileCertCache extends CertCache implements ISetOptionalLogger {
 		}
 	}
 
-	private async writeCacheFile(certs: CertRecords): Promise<void> {
+	private writeCacheFile(certs: CertRecords): Promise<void> {
 		// Store the current timestamp to ensure the watcher skips changes made by this instance
 		this.currentTimestamp = certs._ts;
 		return fs.promises.writeFile(this.file, JSON.stringify(certs, null, this.pretty ? 2 : undefined));
@@ -104,8 +117,12 @@ export class FileCertCache extends CertCache implements ISetOptionalLogger {
 			if (fs.existsSync(this.file)) {
 				try {
 					const data = await this.readCacheFile();
-					if (isCertRecords(data) && data._ts > this.currentTimestamp) {
-						this.handleUpdate(data);
+					const validateResult = await this.schema['~standard'].validate(data);
+					if (validateResult.issues) {
+						return;
+					}
+					if (validateResult.value._ts > this.currentTimestamp) {
+						this.handleUpdate(validateResult.value);
 					}
 				} catch (_err) {
 					this.logger?.error('jwt-util FileCertCache:watch error:', _err);

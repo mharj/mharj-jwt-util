@@ -1,20 +1,16 @@
-import {z} from 'zod';
+import type {StandardSchemaV1} from '@standard-schema/spec';
 
-const issuerUrl = z.string().url();
+export type CertIssuerRecord = Record<string, string | undefined>;
 
-const keyId = z.string();
+export type CertRecords = {
+	_ts: number;
+	certs: Record<string, CertIssuerRecord>;
+};
 
-export const certIssuerRecordSchema = z.record(keyId, z.string().optional());
-
-export type CertIssuerRecord = z.infer<typeof certIssuerRecordSchema>;
-
-export const certRecordsSchema = z.object({
-	_ts: z.number(),
-	certs: z.record(issuerUrl, certIssuerRecordSchema),
-});
-
-export type CertRecords = z.infer<typeof certRecordsSchema>;
-
-export function isCertRecords(obj: unknown): obj is CertRecords {
-	return certRecordsSchema.safeParse(obj).success;
-}
+/**
+ * Standard schema for the public cert records
+ * @since v0.8.0
+ * @example
+ * const certRecordsSchema = z.object({ _ts: z.number(), certs: z.record(z.string(), z.record(z.string(), z.string())) }) satisfies StandardSchemaV1<unknown, CertRecords>;
+ */
+export type CertRecordsSchema = StandardSchemaV1<unknown, CertRecords>;

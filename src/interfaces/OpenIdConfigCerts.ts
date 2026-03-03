@@ -1,12 +1,4 @@
-import {z} from 'zod';
-import {jsonWebKeySchema} from './JsonWebKey';
-
-/**
- * OpenId Configuration Certificates validation schema.
- */
-export const openIdConfigCertsSchema = z.object({
-	keys: z.array(jsonWebKeySchema),
-});
+import type {JsonWebKey} from './JsonWebKey';
 
 /**
  * OpenId Configuration Certificates.
@@ -15,4 +7,6 @@ export const openIdConfigCertsSchema = z.object({
  * - [Google](https://www.googleapis.com/oauth2/v3/certs)
  * - [Azure](https://login.microsoftonline.com/common/discovery/v2.0/keys)
  */
-export type OpenIdConfigCerts = z.infer<typeof openIdConfigCertsSchema>;
+export type OpenIdConfigCerts = {
+	keys: JsonWebKey[];
+};

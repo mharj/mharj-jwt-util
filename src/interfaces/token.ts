@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/** biome-ignore-all lint/suspicious/noExplicitAny: jwt uses any */
 import type {Algorithm} from 'jsonwebtoken';
 import {JwtHeaderError} from '../lib/JwtHeaderError';
 

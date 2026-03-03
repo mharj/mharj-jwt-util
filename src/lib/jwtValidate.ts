@@ -1,9 +1,9 @@
 import {AuthHeader} from '@avanio/auth-header';
 import {ExpireCache} from '@avanio/expire-cache';
-import {type ILoggerLike} from '@avanio/logger-like';
-import {type IAsyncCache} from '@luolapeikko/cache-types';
+import type {ILoggerLike} from '@avanio/logger-like';
+import type {IAsyncCache} from '@luolapeikko/cache-types';
 import * as jwt from 'jsonwebtoken';
-import {type CertCache} from '../cache/CertCache';
+import type {CertCache} from '../cache/CertCache';
 import {
 	assertIssuerToken,
 	assertIsTokenFullDecoded,

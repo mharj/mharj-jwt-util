@@ -1,21 +1,18 @@
-import {posix as path} from 'path';
-import {URL} from 'url';
 import {ExpireCache, type ExpireCacheLogMapType} from '@avanio/expire-cache';
-import {type ILoggerLike, type ISetOptionalLogger} from '@avanio/logger-like';
-import {type CertCache} from '../cache/CertCache';
-import {type CertIssuerRecord, type CertRecords} from '../interfaces/CertRecords';
-import {type JsonWebKey} from '../interfaces/JsonWebKey';
-import {type OpenIdConfig, openIdConfigSchema} from '../interfaces/OpenIdConfig';
-import {type OpenIdConfigCerts, openIdConfigCertsSchema} from '../interfaces/OpenIdConfigCerts';
+import type {ILoggerLike, ISetOptionalLogger} from '@avanio/logger-like';
+import type {CertCache} from '../cache/CertCache';
+import type {CertIssuerRecord, CertRecords} from '../interfaces/CertRecords';
+import type {JsonWebKey} from '../interfaces/JsonWebKey';
+import type {OpenIdConfig} from '../interfaces/OpenIdConfig';
+import type {OpenIdConfigCerts} from '../interfaces/OpenIdConfigCerts';
 import {rsaPublicKeyPem} from './rsaPublicKeyPem';
-import {formatZodError} from './zodUtils';
-import {assertZodError, getError} from '.';
 
-export type IssuerCertLoaderOptions = {
+export type IssuerCertLoaderProps = {
 	/**
 	 * Log mapping for ExpireCache (optional)
 	 */
 	expireCacheLogMap?: Partial<ExpireCacheLogMapType>;
+	logger?: ILoggerLike;
 };
 
 export class IssuerCertLoader implements ISetOptionalLogger {
@@ -31,7 +28,7 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 	private configCache: ExpireCache<OpenIdConfig>;
 	private logger: ILoggerLike | undefined;
 
-	constructor(logger?: ILoggerLike, {expireCacheLogMap}: IssuerCertLoaderOptions = {}) {
+	public constructor({expireCacheLogMap, logger}: IssuerCertLoaderProps = {}) {
 		this.logger = logger;
 		this.configCache = new ExpireCache<OpenIdConfig>(this.logger, expireCacheLogMap, 86400000); // default OpenId config cache for 24 hours
 	}
@@ -115,16 +112,26 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 			await this.saveCerts(); // we have store change
 			return output;
 		} catch (e) {
-			throw new Error(`pullIssuerCerts ${issuerUrl} ${getError(e).message}`);
+			throw new Error(`pullIssuerCerts ${issuerUrl} ${this.getError(e).message}`);
 		}
 	}
 
 	private async saveCerts() {
-		this.store._ts = new Date().getTime(); // update timestamp
+		this.store._ts = Date.now(); // update timestamp
 		if (this.cache) {
 			this.logger?.debug(`jwt-util cacheSaved ${this.countCerts()} certificates`);
 			await this.cache.handleSave(this.store);
 		}
+	}
+
+	private getError(error: unknown): Error {
+		if (error instanceof Error) {
+			return error;
+		}
+		if (typeof error === 'string') {
+			return new Error(error);
+		}
+		return new TypeError(`Unknown error: ${JSON.stringify(error)}`);
 	}
 
 	/**
@@ -158,11 +165,8 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 	private async getCertList(issuerUrl: string): Promise<OpenIdConfigCerts> {
 		this.logger?.debug(`jwt-util getCertList ${issuerUrl}`);
 		const config = await this.getConfiguration(issuerUrl);
-		const req = new Request(config.jwks_uri);
-		const res = await fetch(req);
-		const data = (await this.isValidResp(res).json()) as unknown;
-		this.isValidJwtUriData(data);
-		return data;
+		const res = await fetch(config.jwks_uri);
+		return this.isValidResp(res).json();
 	}
 
 	/**
@@ -186,15 +190,12 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 	/**
 	 * Download OpenId Configuration from issuer.
 	 */
-	private async fetchOpenIdConfig(issuerUrl: string): Promise<OpenIdConfig> {
-		const issuerObj = new URL(issuerUrl);
-		issuerObj.pathname = path.join(issuerObj.pathname, '/.well-known/openid-configuration');
-		this.logger?.debug(`jwt-util get JWT Configuration ${issuerObj.href}`);
-		const req = new Request(issuerObj);
-		const res = await fetch(req);
-		const data = (await this.isValidResp(res).json()) as unknown;
-		this.isValidOpenIdConfig(data);
-		return data;
+	private async fetchOpenIdConfig(issuer: string): Promise<OpenIdConfig> {
+		const configUrl = new URL(issuer);
+		configUrl.pathname = `${configUrl.pathname.replace(/\/$/, '')}/.well-known/openid-configuration`;
+		this.logger?.debug(`jwt-util get JWT Configuration ${configUrl.href}`);
+		const res = await fetch(configUrl);
+		return this.isValidResp(res).json();
 	}
 
 	/**
@@ -204,38 +205,8 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 	 */
 	private isValidResp(resp: Response): Response {
 		if (resp.status !== 200) {
-			throw new Error('fetch error: ' + resp.statusText);
+			throw new Error(`fetch error: ${resp.statusText}`);
 		}
 		return resp;
-	}
-
-	/**
-	 * Check if data is valid OpenID Config.
-	 *
-	 * - Ensure that data is not null and is an object type
-	 * - Ensure that data object has a jwks_uri key.
-	 */
-	private isValidOpenIdConfig(data: unknown): asserts data is OpenIdConfig {
-		try {
-			openIdConfigSchema.parse(data);
-		} catch (e) {
-			assertZodError(e);
-			throw formatZodError(e);
-		}
-	}
-
-	/**
-	 * Check if data is valid JWT URI data.
-	 *
-	 * - Ensure that data is not null and is an object type
-	 * - Ensure that data object has a keys key.
-	 */
-	private isValidJwtUriData(data: unknown): asserts data is OpenIdConfigCerts {
-		try {
-			openIdConfigCertsSchema.parse(data);
-		} catch (e) {
-			assertZodError(e);
-			throw formatZodError(e);
-		}
 	}
 }

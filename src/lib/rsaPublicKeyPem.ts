@@ -36,13 +36,13 @@ export function buildCertFrame(der: string | Buffer): Buffer | string {
 	if (!match) {
 		throw new Error('Cert data error');
 	}
-	return Buffer.from('-----BEGIN RSA PUBLIC KEY-----\r\n' + match.join('\r\n') + '\r\n-----END RSA PUBLIC KEY-----\r\n');
+	return Buffer.from(`-----BEGIN RSA PUBLIC KEY-----\r\n${match.join('\r\n')}\r\n-----END RSA PUBLIC KEY-----\r\n`);
 }
 
 function prePadSigned(hexStr: string) {
 	const msb = hexStr[0];
 	if (msb < '0' || msb > '7') {
-		return '00' + hexStr;
+		return `00${hexStr}`;
 	} else {
 		return hexStr;
 	}
@@ -51,7 +51,7 @@ function prePadSigned(hexStr: string) {
 function toHex(numberValue: number) {
 	const nstr = numberValue.toString(16);
 	if (nstr.length % 2) {
-		return '0' + nstr;
+		return `0${nstr}`;
 	}
 	return nstr;
 }
