@@ -47,7 +47,7 @@
     "@avanio/auth-header": "^0.0.5",
     "@avanio/expire-cache": "^0.6.10",
     "@avanio/logger-like": "^0.2.12",
-    "@biomejs/biome": "2.4.5",
+    "@biomejs/biome": "^2.4.5",
     "@luolapeikko/cache-types": "^0.0.10",
     "@luolapeikko/ts-common": "^1.1.4",
     "@standard-schema/spec": "^1.1.0",
@@ -62,7 +62,7 @@
     "tachyon-drive": "^2.0.0",
     "tachyon-drive-node-fs": "^2.0.0",
     "tachyon-expire-cache": "^2.0.0",
-    "tsdown": "0.21.0-beta.2",
+    "tsdown": "^0.21.0-beta.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18",
     "zod": "^4.3.6"
@@ -76,11 +76,5 @@
     "jsonwebtoken": "^9",
     "tachyon-drive": "^2.0.0"
   },
-  "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@swc/core",
-      "esbuild"
-    ]
-  }
+  "packageManager": "pnpm@12.4.2+sha512.08adc6613180275c7c9edada39dcf08c9c61ad4e7eaf330a4f3461f102b0f907423454d117f98e72d47fef0616070644d7bffc973a6a57f5090a6d7c368b07c9"
 }
