@@ -45,7 +45,7 @@
   ],
   "devDependencies": {
     "@avanio/auth-header": "^0.0.5",
-    "@avanio/expire-cache": "^0.6.10",
+    "@avanio/expire-cache": "^0.7.0",
     "@avanio/logger-like": "^0.2.12",
     "@biomejs/biome": "^2.4.5",
     "@luolapeikko/cache-types": "^0.0.10",
@@ -62,7 +62,7 @@
     "tachyon-drive": "^2.0.0",
     "tachyon-drive-node-fs": "^2.0.0",
     "tachyon-expire-cache": "^2.0.0",
-    "tsdown": "^0.21.0-beta.2",
+    "tsdown": "^0.23.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18",
     "zod": "^4.3.6"
