@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "preserve",
     "target": "es2021",
     "lib": ["ES2021", "dom"],
     "rootDir": "./src",
     "outDir": "./dist",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "sourceRoot": "./src",
     "types": ["node"],
     "declaration": true,

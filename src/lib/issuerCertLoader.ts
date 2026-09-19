@@ -35,7 +35,7 @@ export class IssuerCertLoader implements ISetOptionalLogger {
 
 	public setLogger(logger: ILoggerLike | undefined) {
 		this.logger = logger;
-		this.configCache.logger.setLogger(logger);
+		this.configCache.logger.logger = logger;
 	}
 
 	public async setCache(cache: CertCache) {
