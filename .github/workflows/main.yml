@@ -1,4 +1,4 @@
-name: Validate and publish package to npmjs
+name: CICD
 on:
   push:
     branches: [main]
@@ -53,6 +53,15 @@ jobs:
       - name: Run linter checks
         if: env.HAVE_LINT_SCRIPT == 'true'
         run: ${{ env.PACKAGE_MANAGER }} run lint
+
+      - name: Run and publish code coverage
+        if: |
+          github.ref == env.PUBLISH_BRANCH &&
+          env.HAVE_TEST_SCRIPT == 'true'
+        uses: qltysh/qlty-action/coverage@08a0a862c159eae9b9003081da6663d96efef637 # v2.3.0
+        with:
+          oidc: true
+          files: coverage/lcov.info
 
       # npm publish when PR done
       - name: Publish ${{env.PACKAGE_NAME}} ${{env.PACKAGE_VERSION}}
