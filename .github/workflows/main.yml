@@ -31,8 +31,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: dcarbone/install-jq-action@v2
-      - uses: actions/checkout@v4
+      - uses: dcarbone/install-jq-action@v4
+      - uses: actions/checkout@v7
 
       - name: Identify project environment variables
         run: |
@@ -43,10 +43,10 @@ jobs:
           echo "HAVE_LINT_SCRIPT=$(jq 'if .scripts.lint == null then false else true end' package.json)" | tee -a $GITHUB_ENV
           echo "HAVE_UNIT_TEST_SCRIPT=$(jq 'if .scripts.test == null then false else true end' package.json)"| tee -a $GITHUB_ENV
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         if: env.NPM == 'pnpm'
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 'lts/*'
           registry-url: 'https://registry.npmjs.org'
