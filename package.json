@@ -40,7 +40,7 @@
     "dist"
   ],
   "devDependencies": {
-    "@avanio/auth-header": "^0.0.5",
+    "@avanio/auth-header": "^0.0.6",
     "@avanio/expire-cache": "^0.7.0",
     "@avanio/logger-like": "^0.2.13",
     "@biomejs/biome": "^2.5.14",
