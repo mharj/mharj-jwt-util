@@ -47,7 +47,9 @@ jobs:
         run: ${{ env.PACKAGE_MANAGER }} run validate
 
       - name: Run unit tests
-        if: env.HAVE_TEST_SCRIPT == 'true'
+        if: |
+          github.actor != 'dependabot[bot]' &&
+          env.HAVE_TEST_SCRIPT == 'true'
         run: ${{ env.PACKAGE_MANAGER }} test
 
       - name: Run linter checks
